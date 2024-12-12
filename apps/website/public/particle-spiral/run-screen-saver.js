@@ -65,7 +65,7 @@ export default function ScreenSaverController(canvasId) {
         rect,
         onDone: () => {
           if (!killed) {
-            simulateBiddingConfig.delayRange = Math.random() * 7000 + 3000;
+            simulateBiddingConfig.delayRange = Math.random() * 7000 + 1000;
             start();
           }
         },

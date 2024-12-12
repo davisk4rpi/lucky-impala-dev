@@ -14,16 +14,16 @@ export function loader({ context }: Route.LoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
-    <main className="flex flex-col items-center justify-end h-screen w-screen bg-black text-white">
+    <main className="flex flex-col items-center justify-end h-screen w-screen bg-black text-white px-4">
       <div className="flex-grow flex flex-col items-center justify-center">
-        <h1 className="text-9xl font-bold uppercase">
+        <h1 className="text-6xl lg:text-9xl font-bold uppercase">
           More<sup>*</sup>
         </h1>
       </div>
       <small className="text-base font-extralight mb-2">
         <sup>*</sup>coming soon
       </small>
-      <p className="py-4 text-xl ">
+      <p className="py-4 text-xl text-center">
         But if you're bored, watch this&nbsp;
         <a
           href="/particle-spiral"
