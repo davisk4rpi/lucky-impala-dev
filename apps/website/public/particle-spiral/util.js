@@ -243,7 +243,7 @@ export async function simulateBidding(onBidRefreshInfo, firstDelay = 2000) {
   // onBidRefreshInfo?.(JSON.stringify({ amount: 1, auction_type_code: "daily" }));
 
   for (const bid of bids) {
-    await sleep(Math.random() * 1000);
+    await sleep(Math.random() * Math.random() * 10000);
     bid.auction_type_code = getRandomValueFromArray(Object.keys(COLORS))[0];
     onBidRefreshInfo?.(JSON.stringify(bid));
   }

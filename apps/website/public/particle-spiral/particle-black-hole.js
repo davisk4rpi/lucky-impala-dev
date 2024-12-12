@@ -63,7 +63,6 @@ function Spiral(rect, options = {}) {
     this.seedMaxParticleSize = this.maxRadialDistance * particleSizeMultipler;
     this.initialRadialDistance =
       this.maxRadialDistance - this.seedMaxParticleSize;
-    this.seedRotateSpeed = this.baseSeedRotateSpeed();
   };
   this.baseSeedRotateSpeed = () =>
     seedRotateSpeedMultiplier * Math.sqrt(this.maxRadialDistance / 2);
@@ -99,11 +98,10 @@ function Spiral(rect, options = {}) {
       x: (rect.width / 2) * (1 + centerXRandomFactor),
       y: (rect.height / 2) * (1 + centerYRandomFactor),
     };
-    const adjWidth = rect.width * (1 + Math.abs(centerXRandomFactor));
-    const adjHeight = rect.height * (1 + Math.abs(centerYRandomFactor));
     const maxRadialDistance =
-      Math.sqrt(Math.pow(adjWidth, 2) + Math.pow(adjHeight, 2)) / 2;
+      Math.sqrt(Math.pow(rect.width, 2) + Math.pow(rect.height, 2)) / 2;
     this.setMaxRadialDistance(maxRadialDistance);
+    this.seedRotateSpeed = this.baseSeedRotateSpeed();
   };
   this.setSize(rect);
 
@@ -128,7 +126,8 @@ function Spiral(rect, options = {}) {
     );
   };
 
-  this.getInitialTheta = () => this.getTheta(this.initialRadialDistance);
+  this.getInitialTheta = (bFactor = 1) =>
+    this.getTheta(this.initialRadialDistance, bFactor);
 
   this.getCoordinates = (radialDistance, theta, thetaOffset = 0) => {
     let { x, y } = this.center();
@@ -274,7 +273,7 @@ function Particle({ colorTuple, ctx, amount = 0 }) {
   const scaleFactor = hyperbolicInterpolation(
     amount,
     { min: 0, max: Math.max(10000, amount) },
-    { min: 1, max: 4 },
+    { min: 1, max: 3 },
     2
   );
   const thetaOffset = Math.random() * Math.PI * 2;
@@ -343,7 +342,11 @@ function Particle({ colorTuple, ctx, amount = 0 }) {
       ctx.beginPath();
       ctx.lineWidth = particleSize;
       ctx.strokeStyle = strokeColor;
-      ctx.moveTo(lastCoordinates.x, lastCoordinates.y);
+      const startX =
+        lastCoordinates.x - (coordinates.x - lastCoordinates.x) * scaleFactor;
+      const startY =
+        lastCoordinates.y - (coordinates.y - lastCoordinates.y) * scaleFactor;
+      ctx.moveTo(startX, startY);
       ctx.lineTo(coordinates.x, coordinates.y);
       ctx.stroke();
     }
@@ -460,22 +463,24 @@ export default function ParticleBlackHole({
   let offsetThetaChangeDirection = 1;
 
   const addCenterOffset = () => {
-    const inflectionPoint = 0.15 * maxRadialDistance;
-    const maxDistance = 0.3 * maxRadialDistance;
+    const inflectionPoint = 0.25 * maxRadialDistance;
+    const maxDistance = 0.5 * maxRadialDistance;
     const minDistance = 0;
     const minThetaChange = spiralOptions.seedRotateSpeedMultiplier / 5;
 
     if (offsetRadialDistance >= inflectionPoint) {
-      offsetThetaChange = linearInterpolation(
+      offsetThetaChange = hyperbolicInterpolation(
         Math.min(offsetRadialDistance, maxDistance),
         { min: inflectionPoint, max: maxDistance },
-        { min: spiralOptions.seedRotateSpeedMultiplier, max: minThetaChange }
+        { min: spiralOptions.seedRotateSpeedMultiplier, max: minThetaChange },
+        1 / 3
       );
     } else {
-      offsetThetaChange = linearInterpolation(
+      offsetThetaChange = hyperbolicInterpolation(
         Math.max(offsetRadialDistance, minDistance),
         { min: minDistance, max: inflectionPoint },
-        { min: minThetaChange, max: spiralOptions.seedRotateSpeedMultiplier }
+        { min: minThetaChange, max: spiralOptions.seedRotateSpeedMultiplier },
+        3
       );
     }
     if (offsetRadialDistance >= maxDistance) {
@@ -553,7 +558,7 @@ export default function ParticleBlackHole({
       ) {
         outputRange.min = 0.6 * adjMaxRadialDistance;
         outputRange.max = 0.8 * adjMaxRadialDistance;
-      } else if (Math.random() > 0.5) {
+      } else if (Math.random() > 0.3) {
         outputRange.min = 0.8 * adjMaxRadialDistance;
         outputRange.max = 1 * adjMaxRadialDistance;
       } else {

@@ -65,11 +65,11 @@ export default function ScreenSaverController(canvasId) {
           }
         },
         auctionTypeColors,
-        jackpot: 30000,
+        jackpot: 10000,
         spiralOptions: {
           spiralType: "random",
           seedRotateSpeedMultiplier: 0.0005, // lower multiplier means slower rotation
-          particleSizeRatio: 1 / 40, // lower ratio means smaller particles
+          particleSizeRatio: 1 / 30, // lower ratio means smaller particles
         },
         maxKillCount: 500,
         changeMaxRadialDistanceInterval: 3000,
