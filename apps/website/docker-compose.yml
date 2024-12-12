@@ -1,12 +1,13 @@
 name: lucky-website
 
 services:
-  remix:
+  remix-prod:
+    container_name: remix-prod
     build:
       context: .
       dockerfile: ./Dockerfile.yarn
     ports:
-      - 3000:3000
+      - 3003:3003
     environment:
       - NODE_ENV=production
 
