@@ -468,7 +468,7 @@ export default function ParticleBlackHole({
   let maxRadialDistanceCount = 0;
   let killCount = 0;
 
-  let offsetTheta = Math.random() * Math.PI * 2;
+  let offsetTheta = (Math.random() * Math.PI) / 2;
   let offsetRadialDistance = 0;
   let offsetThetaOffset = Math.random() * Math.PI * 2;
   let offsetThetaChange = spiralOptions.seedRotateSpeedMultiplier;
@@ -571,7 +571,7 @@ export default function ParticleBlackHole({
       ) {
         outputRange.min = 0.6 * adjMaxRadialDistance;
         outputRange.max = 0.8 * adjMaxRadialDistance;
-      } else if (Math.random() > 0.40 * spiral.initialAspectRatio) {
+      } else if (Math.random() > 0.4 * spiral.initialAspectRatio) {
         outputRange.min = 0.8 * adjMaxRadialDistance;
         outputRange.max = 1 * adjMaxRadialDistance;
       } else {
