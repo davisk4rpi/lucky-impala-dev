@@ -10,6 +10,7 @@ services:
       - 3003:3003
     environment:
       - NODE_ENV=production
+      - PORT=3003
 
   caddy-prod:
     build:
@@ -22,7 +23,7 @@ services:
       - "443:443"
       - "443:443/udp"
     env_file:
-      - .env
+      - ./.env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data

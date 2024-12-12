@@ -2,5 +2,5 @@ www.luckyimpala.dev {
 	tls {
 		dns digitalocean {env.CADDY_DIGITALOCEAN_API_TOKEN}
 	}
-	reverse_proxy remix:3003
+	reverse_proxy remix-prod:3003
 }
