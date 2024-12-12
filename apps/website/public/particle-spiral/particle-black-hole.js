@@ -557,6 +557,7 @@ export default function ParticleBlackHole({
         1 / 5
       );
     }
+
     if (maxRadialDistanceCount > 1.5 * changeMaxRadialDistanceInterval) {
       maxRadialDistanceIntervalCount++;
       lastMaxRadialDistance = nextMaxRadialDistance;
@@ -570,7 +571,7 @@ export default function ParticleBlackHole({
       ) {
         outputRange.min = 0.6 * adjMaxRadialDistance;
         outputRange.max = 0.8 * adjMaxRadialDistance;
-      } else if (Math.random() > 0.35 * initialAspectRatio) {
+      } else if (Math.random() > 0.40 * spiral.initialAspectRatio) {
         outputRange.min = 0.8 * adjMaxRadialDistance;
         outputRange.max = 1 * adjMaxRadialDistance;
       } else {
