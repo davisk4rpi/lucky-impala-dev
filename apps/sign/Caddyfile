@@ -1,0 +1,6 @@
+sign.luckyimpala.dev {
+	tls {
+		dns digitalocean {env.CADDY_DIGITALOCEAN_API_TOKEN}
+	}
+	reverse_proxy documenso:3000
+}
