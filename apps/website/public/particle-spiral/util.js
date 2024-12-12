@@ -237,15 +237,25 @@ const shuffleArrayOrder = (array) => {
   return array.sort(() => Math.random() - 0.5);
 };
 
-export async function simulateBidding(onBidRefreshInfo, firstDelay = 2000) {
+export async function simulateBidding(
+  onBidRefreshInfo,
+  firstDelay = 2000,
+  config = {
+    delayRange: 7000,
+    isKill: false,
+  }
+) {
   await sleep(firstDelay);
   const bids = shuffleArrayOrder([...TEST_BIDS]);
   // onBidRefreshInfo?.(JSON.stringify({ amount: 1, auction_type_code: "daily" }));
 
   for (const bid of bids) {
-    await sleep(Math.random() * Math.random() * 10000);
+    await sleep(Math.random() * Math.min(config.delayRange, 2000));
     bid.auction_type_code = getRandomValueFromArray(Object.keys(COLORS))[0];
     onBidRefreshInfo?.(JSON.stringify(bid));
   }
-  return simulateBidding(onBidRefreshInfo, 0);
+  if (config.isKill) {
+    return;
+  }
+  return simulateBidding(onBidRefreshInfo, 0, config);
 }

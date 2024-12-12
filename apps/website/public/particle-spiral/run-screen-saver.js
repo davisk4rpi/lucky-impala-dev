@@ -54,6 +54,10 @@ export default function ScreenSaverController(canvasId) {
     const rect = _resizeCanvas();
 
     let onBidRefreshInfo;
+    const simulateBiddingConfig = {
+      delayRange: Math.random() * 7000 + 3000,
+      isKill: false,
+    };
     const start = () => {
       screenSaver = ParticleBlackHole({
         canvas,
@@ -61,6 +65,7 @@ export default function ScreenSaverController(canvasId) {
         rect,
         onDone: () => {
           if (!killed) {
+            simulateBiddingConfig.delayRange = Math.random() * 7000 + 3000;
             start();
           }
         },
@@ -77,9 +82,13 @@ export default function ScreenSaverController(canvasId) {
       onBidRefreshInfo = screenSaver.onBidRefreshInfo;
     };
     start();
-    simulateBidding((bid) => {
-      onBidRefreshInfo?.(bid);
-    });
+    simulateBidding(
+      (bid) => {
+        onBidRefreshInfo?.(bid);
+      },
+      0,
+      simulateBiddingConfig
+    );
     // socket.on("BidRefreshInfo", (message) => {
     //   onBidRefreshInfo?.(message);
     // });
