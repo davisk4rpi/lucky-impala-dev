@@ -20,8 +20,8 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-    environment:
-      CADDY_DIGITALOCEAN_API_TOKEN: ${CADDY_DIGITALOCEAN_API_TOKEN}
+    env_file:
+      - .env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
