@@ -1,5 +1,5 @@
-import ParticleBlackHole from "./particle-black-hole.js";
-import { simulateBidding, hexToRgbTuple, COLORS } from "./util.js";
+import ParticleBlackHole from "./particle-black-hole.js?v=4";
+import { simulateBidding, hexToRgbTuple, COLORS } from "./util.js?v=4";
 
 export default function ScreenSaverController(canvasId) {
   let screenSaver;
