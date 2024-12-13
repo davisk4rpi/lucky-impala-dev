@@ -632,7 +632,7 @@ export default function ParticleBlackHole({
 
   const animateStage2Particle = (particle) => {
     const rotateSpeedMultipler = 1;
-    return particle.rotate(spiral, rotateSpeedMultipler);
+    return particle.rotate(killStageSpiral, rotateSpeedMultipler);
   };
 
   function animate() {
