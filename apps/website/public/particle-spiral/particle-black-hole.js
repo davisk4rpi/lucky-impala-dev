@@ -60,16 +60,12 @@ function Spiral(rect, options = {}) {
   this.b = 0;
   this.c = 1;
   this.maxRadialDistance = 0;
+  this.maxTheta = 0;
   this.seedRotateSpeed = 0;
   this.seedMaxParticleSize = 0;
   this.spiralType = _options.spiralType;
   this.initialAspectRatio = aspectRatio;
 
-  this.setMaxRadialDistance = (maxRadialDistance) => {
-    this.maxRadialDistance = Math.max(maxRadialDistance, 1);
-    this.b = this.maxRadialDistance / Math.pow(bDivisor, 1 / this.c);
-    this.seedMaxParticleSize = this.maxRadialDistance * particleSizeMultipler;
-  };
   this.baseSeedRotateSpeed = () =>
     seedRotateSpeedMultiplier * Math.sqrt(this.maxRadialDistance / 2);
 
@@ -94,33 +90,6 @@ function Spiral(rect, options = {}) {
     _centerOffset.x = x;
     _centerOffset.y = y;
   };
-
-  this.setSize = (rect) => {
-    this.rect = rect;
-    switch (this.spiralType) {
-      case "random":
-        this.c = cRandom;
-        break;
-      case "fermat":
-        this.c = 2;
-        break;
-      case "fermat2":
-        this.c = 5 / 4;
-        break;
-      case "archimedean":
-      default:
-        this.c = 1;
-    }
-    this.setCenter({
-      x: (rect.width / 2) * (1 + centerXRandomFactor),
-      y: (rect.height / 2) * (1 + centerYRandomFactor),
-    });
-    const maxRadialDistance =
-      Math.sqrt(Math.pow(rect.width, 2) + Math.pow(rect.height, 2)) / 2;
-    this.setMaxRadialDistance(maxRadialDistance);
-    this.seedRotateSpeed = this.baseSeedRotateSpeed();
-  };
-  this.setSize(rect);
 
   this.getRadialDistance = (theta = 0, bFactor = 1) => {
     let _theta = Math.abs(theta);
@@ -159,15 +128,55 @@ function Spiral(rect, options = {}) {
       y,
     };
   };
-  this.calculateParticleSize = (radialDistance) => {
-    let absRadialDistance = Math.abs(radialDistance);
+  this.calculateParticleSize = ({ radialDistance, theta, bFactor }) => {
+    let _maxTheta = this.maxTheta;
+    if (!theta) {
+      theta = this.getTheta(radialDistance, bFactor);
+    }
+    if (bFactor !== undefined) {
+      _maxTheta = this.maxTheta / Math.pow(bFactor, this.c);
+    }
     let particleSize = linearInterpolation(
-      absRadialDistance,
-      { min: 0, max: this.maxRadialDistance },
+      Math.abs(theta),
+      { min: 0, max: _maxTheta },
       { min: 1, max: this.seedMaxParticleSize }
     );
     return particleSize;
   };
+
+  this.setMaxRadialDistance = (maxRadialDistance) => {
+    this.maxRadialDistance = Math.max(maxRadialDistance, 1);
+    this.b = this.maxRadialDistance / Math.pow(bDivisor, 1 / this.c);
+    this.seedMaxParticleSize = this.maxRadialDistance * particleSizeMultipler;
+    this.maxTheta = this.getTheta(this.maxRadialDistance);
+  };
+
+  this.setSize = (rect) => {
+    this.rect = rect;
+    switch (this.spiralType) {
+      case "random":
+        this.c = cRandom;
+        break;
+      case "fermat":
+        this.c = 2;
+        break;
+      case "fermat2":
+        this.c = 5 / 4;
+        break;
+      case "archimedean":
+      default:
+        this.c = 1;
+    }
+    this.setCenter({
+      x: (rect.width / 2) * (1 + centerXRandomFactor),
+      y: (rect.height / 2) * (1 + centerYRandomFactor),
+    });
+    const maxRadialDistance =
+      Math.sqrt(Math.pow(rect.width, 2) + Math.pow(rect.height, 2)) / 2;
+    this.setMaxRadialDistance(maxRadialDistance);
+    this.seedRotateSpeed = this.baseSeedRotateSpeed();
+  };
+  this.setSize(rect);
 }
 
 function KillZone({
@@ -390,8 +399,14 @@ function Particle({ ctx, amount = 0, options = {} }) {
     }
     state.radialDistance = spiral.getRadialDistance(state.theta, state.bFactor);
     const absRadialDistance = Math.abs(state.radialDistance);
-    const particleSize =
-      spiral.calculateParticleSize(state.radialDistance) * scaleFactor;
+    let particleSize =
+      spiral.calculateParticleSize({
+        theta: state.theta,
+        bFactor: state.bFactor,
+      }) * scaleFactor;
+    if (state.theta < 0) {
+      particleSize *= 2;
+    }
 
     const coordinates = spiral.getCoordinates(
       state.radialDistance,
@@ -462,7 +477,7 @@ export default function ParticleBlackHole({
     killColor,
     kill,
     calculateParticleSize: (radialDistance) =>
-      spiral.calculateParticleSize(radialDistance),
+      spiral.calculateParticleSize({ radialDistance }),
     killValue: jackpot,
   });
 
