@@ -188,6 +188,7 @@ function KillZone({
   killValue,
 }) {
   let isKill = false;
+  this.radiusWhenKill = 0;
   let currentValue = 0;
   let growRadius = 0;
   let currentRadius = 0;
@@ -249,6 +250,7 @@ function KillZone({
     if (currentValue > killValue) {
       kill?.();
       isKill = true;
+      this.radiusWhenKill = currentRadius;
     }
   };
   this.distanceFromCenter = ({ x, y }) =>
@@ -737,7 +739,7 @@ export default function ParticleBlackHole({
             killCount,
             { min: 0, max: stage1KillCount },
             {
-              min: newMaxKillRadius,
+              min: killZone.radiusWhenKill,
               max: Math.max(canvas.width, canvas.height),
             },
             1 / 2
