@@ -727,9 +727,9 @@ export default function ParticleBlackHole({
     if (isKill) {
       try {
         if (killCount < stage2KillCount) {
-          ctx.fillStyle = `rgba(0, 0, 0, 0.3)`;
+          ctx.fillStyle = `rgba(0, 0, 0, 0.2)`;
         } else {
-          ctx.fillStyle = `rgba(0, 0, 0, 0.1)`;
+          ctx.fillStyle = `rgba(0, 0, 0, 0.01)`;
         }
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         if (killCount < stage1KillCount) {
@@ -740,7 +740,7 @@ export default function ParticleBlackHole({
               min: newMaxKillRadius,
               max: Math.max(canvas.width, canvas.height),
             },
-            2
+            1 / 2
           );
         } else if (killCount < stage2KillCount) {
           newMaxKillRadius = hyperbolicInterpolation(
