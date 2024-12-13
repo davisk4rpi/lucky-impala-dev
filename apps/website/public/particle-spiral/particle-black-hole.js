@@ -23,6 +23,7 @@ const DEFAULT_SPIRAL_OPTIONS = {
   spiralType: "random",
   seedRotateSpeedMultiplier: 0.0005,
   particleSizeRatio: 1 / 40,
+  noRandomCenter: false,
 };
 function Spiral(rect, options = {}) {
   const _options = { ...DEFAULT_SPIRAL_OPTIONS, ...options };
@@ -34,16 +35,20 @@ function Spiral(rect, options = {}) {
   const aspectRatio =
     Math.max(rect.width, rect.height) / Math.min(rect.width, rect.height);
 
-  let centerXRandomFactor = linearInterpolation(
-    Math.random(),
-    { min: 0, max: 1 },
-    { min: -0.2 / aspectRatio, max: 0.2 / aspectRatio }
-  );
-  let centerYRandomFactor = linearInterpolation(
-    Math.random(),
-    { min: 0, max: 1 },
-    { min: -0.2 / aspectRatio, max: 0.2 / aspectRatio }
-  );
+  let centerXRandomFactor = _options.noRandomCenter
+    ? 0
+    : linearInterpolation(
+        Math.random(),
+        { min: 0, max: 1 },
+        { min: -0.2 / aspectRatio, max: 0.2 / aspectRatio }
+      );
+  let centerYRandomFactor = _options.noRandomCenter
+    ? 0
+    : linearInterpolation(
+        Math.random(),
+        { min: 0, max: 1 },
+        { min: -0.2 / aspectRatio, max: 0.2 / aspectRatio }
+      );
 
   let _centerOffset = { x: 0, y: 0 };
   let _center = { x: 0, y: 0 };
@@ -57,7 +62,6 @@ function Spiral(rect, options = {}) {
   this.maxRadialDistance = 0;
   this.seedRotateSpeed = 0;
   this.seedMaxParticleSize = 0;
-  this.initialRadialDistance = 0;
   this.spiralType = _options.spiralType;
   this.initialAspectRatio = aspectRatio;
 
@@ -65,8 +69,6 @@ function Spiral(rect, options = {}) {
     this.maxRadialDistance = Math.max(maxRadialDistance, 1);
     this.b = this.maxRadialDistance / Math.pow(bDivisor, 1 / this.c);
     this.seedMaxParticleSize = this.maxRadialDistance * particleSizeMultipler;
-    this.initialRadialDistance =
-      this.maxRadialDistance - this.seedMaxParticleSize;
   };
   this.baseSeedRotateSpeed = () =>
     seedRotateSpeedMultiplier * Math.sqrt(this.maxRadialDistance / 2);
@@ -78,12 +80,23 @@ function Spiral(rect, options = {}) {
       y: _center.y + _centerOffset.y,
     };
   };
+  this.setCenter = ({ x = 0, y = 0 }) => {
+    _center.x = x;
+    _center.y = y;
+    this.nearestDeviceEdge = Math.min(
+      _center.x,
+      _center.y,
+      this.rect.width - _center.x,
+      this.rect.height - _center.y
+    );
+  };
   this.setCenterOffset = ({ x = 0, y = 0 }) => {
     _centerOffset.x = x;
     _centerOffset.y = y;
   };
 
   this.setSize = (rect) => {
+    this.rect = rect;
     switch (this.spiralType) {
       case "random":
         this.c = cRandom;
@@ -98,20 +111,14 @@ function Spiral(rect, options = {}) {
       default:
         this.c = 1;
     }
-    _center = {
+    this.setCenter({
       x: (rect.width / 2) * (1 + centerXRandomFactor),
       y: (rect.height / 2) * (1 + centerYRandomFactor),
-    };
+    });
     const maxRadialDistance =
       Math.sqrt(Math.pow(rect.width, 2) + Math.pow(rect.height, 2)) / 2;
     this.setMaxRadialDistance(maxRadialDistance);
     this.seedRotateSpeed = this.baseSeedRotateSpeed();
-    this.nearestDeviceEdge = Math.min(
-      _center.x,
-      _center.y,
-      rect.width - _center.x,
-      rect.height - _center.y
-    );
   };
   this.setSize(rect);
 
@@ -136,9 +143,6 @@ function Spiral(rect, options = {}) {
     );
   };
 
-  this.getInitialTheta = (bFactor = 1) =>
-    this.getTheta(this.initialRadialDistance, bFactor);
-
   this.getCoordinates = (radialDistance, theta, thetaOffset = 0) => {
     let { x, y } = this.center();
     const xLength = radialDistance * Math.cos(Math.abs(theta) + thetaOffset);
@@ -159,7 +163,7 @@ function Spiral(rect, options = {}) {
     let absRadialDistance = Math.abs(radialDistance);
     let particleSize = linearInterpolation(
       absRadialDistance,
-      { min: 0, max: Math.max(this.maxRadialDistance, absRadialDistance) },
+      { min: 0, max: this.maxRadialDistance },
       { min: 1, max: this.seedMaxParticleSize }
     );
     return particleSize;
@@ -174,6 +178,7 @@ function KillZone({
   calculateParticleSize,
   killValue,
 }) {
+  let isKill = false;
   let currentValue = 0;
   let growRadius = 0;
   let currentRadius = 0;
@@ -220,14 +225,21 @@ function KillZone({
 
   this.updateMaxKillRadius = (maxKillRadius) => {
     _killRadius = maxKillRadius * killRadiusFactor;
-    growRadius = this.growRadius();
+    if (isKill) {
+      currentRadius = _killRadius;
+      growRadius = _killRadius;
+    } else {
+      growRadius = this.growRadius();
+    }
   };
 
   this.addValue = (value) => {
+    if (isKill) return;
     currentValue += value;
     growRadius = this.growRadius();
     if (currentValue > killValue) {
       kill?.();
+      isKill = true;
     }
   };
   this.distanceFromCenter = ({ x, y }) =>
@@ -245,7 +257,7 @@ function KillZone({
   this.currentRadius = () => currentRadius;
   this.draw = (ctx) => {
     if (currentRadius < 0) return;
-    if (growRadius > currentRadius) {
+    if (growRadius > currentRadius && !isKill) {
       const radiusDelta = growRadius - currentRadius;
       currentRadius += Math.min(radiusDelta / 10, 0.5);
     } else {
@@ -273,71 +285,118 @@ function KillZone({
   };
 }
 
-function Particle({ colorTuple, ctx, amount = 0 }) {
-  const bFactor = linearInterpolation(
-    Math.random(),
-    { min: 0, max: 1 },
-    { min: 0.5, max: 1 }
-  );
-  const strokeColor = `rgba(${colorTuple.join(",")}, 0.5)`;
+const drawParticleCircle = (ctx, { coordinates, particleSize, colorStyle }) => {
+  ctx.beginPath();
+  ctx.fillStyle = colorStyle;
+  ctx.arc(coordinates.x, coordinates.y, particleSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+};
+const drawParticleStroke = ({
+  ctx,
+  lastCoordinates,
+  coordinates,
+  particleSize,
+  colorStyle,
+}) => {
+  ctx.beginPath();
+  ctx.strokeStyle = colorStyle;
+  ctx.lineWidth = particleSize;
+  ctx.moveTo(lastCoordinates.x, lastCoordinates.y);
+  ctx.lineTo(coordinates.x, coordinates.y);
+  ctx.stroke();
+};
+
+function Particle({ ctx, amount = 0, options = {} }) {
+  this.amount = amount;
+  this.particleType = options?.particleType ?? "circle";
+  this.lastCoordinates = { x: 0, y: 0 };
+
+  const colorTuple = options?.colorTuple ?? [40, 40, 40];
+  const _joinedColorTuple = colorTuple.join(",");
+  const finalOpacity = this.particleType === "circle" ? 0.7 : 0.5;
+  let alpha = options.initialAlpha ?? 0;
+  const stepAlpha = () => {
+    alpha += 0.05;
+    if (alpha > 1) {
+      alpha = 1;
+    }
+  };
+  const colorStyle = () =>
+    `rgba(${_joinedColorTuple}, ${finalOpacity * alpha})`;
+
   const scaleFactor = hyperbolicInterpolation(
-    amount,
-    { min: 0, max: Math.max(10000, amount) },
+    this.amount,
+    { min: 0, max: 10000 },
     { min: 1, max: 3 },
     2
   );
-  const thetaOffset = Math.random() * Math.PI * 2;
-  let radialDistance = Infinity;
-  let theta = undefined;
-  let lastCoordinates = { x: 0, y: 0 };
-  this.theta = () => theta;
-  this.radialDistance = () => radialDistance;
-  this.scaleFactor = () => scaleFactor;
-  this.amount = () => amount;
-  this.colorTuple = colorTuple;
-  this.rotate = (spiral, killZone, paused = false) => {
-    if (theta === undefined) {
-      radialDistance = spiral.initialRadialDistance;
-      theta = spiral.getTheta(radialDistance, bFactor);
-      lastCoordinates = spiral.getCoordinates(
-        radialDistance,
-        theta,
-        thetaOffset
+
+  const state = {
+    radialDistance: options.initialRadialDistance ?? Infinity,
+    theta: undefined,
+    thetaOffset: options.thetaOffset ?? Math.random() * Math.PI * 2,
+    bFactor:
+      options.bFactor ??
+      linearInterpolation(
+        Math.random(),
+        { min: 0, max: 1 },
+        { min: 0.5, max: 1 }
+      ),
+  };
+
+  this.theta = () => state.theta;
+  this.radialDistance = () => state.radialDistance;
+  this.clone = ({ initialRadialDistance }) => {
+    const particle = new Particle({
+      ctx,
+      amount,
+      options: {
+        colorTuple,
+        particleType: this.particleType,
+        thetaOffset: state.thetaOffset,
+        bFactor: state.bFactor,
+        initialRadialDistance,
+        initialAlpha: alpha,
+      },
+    });
+    return particle;
+  };
+
+  const draw =
+    this.particleType === "circle" ? drawParticleCircle : drawParticleStroke;
+  this.rotate = (spiral, rotateSpeedMultipler, paused = false) => {
+    stepAlpha();
+    if (state.radialDistance === Infinity) {
+      state.radialDistance = spiral.maxRadialDistance;
+    }
+    if (state.theta === undefined) {
+      state.theta = spiral.getTheta(state.radialDistance, state.bFactor);
+      this.lastCoordinates = spiral.getCoordinates(
+        state.radialDistance,
+        state.theta,
+        state.thetaOffset
       );
     }
-    const currentRadius = killZone.currentRadius();
-    const rotateSpeedMultipler = linearInterpolation(
-      Math.min(
-        10,
-        Math.max(
-          currentRadius * 2 - killZone.distanceFromCenter(lastCoordinates),
-          0
-        )
-      ),
-      { min: 0, max: 20 },
-      { min: 1, max: 1.5 }
-    );
 
     const rotateSpeed =
-      (spiral.seedRotateSpeed / (scaleFactor * scaleFactor)) *
-      rotateSpeedMultipler;
-    if (Math.abs(theta) < rotateSpeed && theta !== 0) {
-      theta = 0;
+      (spiral.seedRotateSpeed / scaleFactor) * rotateSpeedMultipler;
+    if (Math.abs(state.theta) < rotateSpeed && state.theta !== 0) {
+      state.theta = 0;
     } else {
-      theta -= rotateSpeed;
-      if (theta < 0) {
-        theta -= rotateSpeed;
+      state.theta -= rotateSpeed;
+      if (state.theta < 0) {
+        state.theta -= rotateSpeed;
       }
     }
-    radialDistance = spiral.getRadialDistance(theta, bFactor);
-    const absRadialDistance = Math.abs(radialDistance);
+    state.radialDistance = spiral.getRadialDistance(state.theta, state.bFactor);
+    const absRadialDistance = Math.abs(state.radialDistance);
     const particleSize =
-      spiral.calculateParticleSize(radialDistance) * scaleFactor;
+      spiral.calculateParticleSize(state.radialDistance) * scaleFactor;
 
     const coordinates = spiral.getCoordinates(
-      radialDistance,
-      theta,
-      thetaOffset
+      state.radialDistance,
+      state.theta,
+      state.thetaOffset
     );
     if (
       absRadialDistance > spiral.maxRadialDistance &&
@@ -348,21 +407,16 @@ function Particle({ colorTuple, ctx, amount = 0 }) {
     ) {
       return true;
     }
-    if (paused === false || (paused === "positive" && theta < 0)) {
-      ctx.beginPath();
-      ctx.lineWidth = particleSize;
-      ctx.strokeStyle = strokeColor;
-      const startX =
-        lastCoordinates.x -
-        (coordinates.x - lastCoordinates.x) * scaleFactor * scaleFactor;
-      const startY =
-        lastCoordinates.y -
-        (coordinates.y - lastCoordinates.y) * scaleFactor * scaleFactor;
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(coordinates.x, coordinates.y);
-      ctx.stroke();
+    if (paused === false) {
+      draw(ctx, {
+        lastCoordinates: this.lastCoordinates,
+        coordinates,
+        particleSize,
+        colorStyle: colorStyle(),
+      });
     }
-    lastCoordinates = coordinates;
+    this.lastCoordinates = coordinates;
+    return false;
   };
 }
 
@@ -373,7 +427,6 @@ export default function ParticleBlackHole({
   auctionTypeColors,
   jackpot = 10000,
   spiralOptions = DEFAULT_SPIRAL_OPTIONS,
-  maxKillCount = 500,
   changeMaxRadialDistanceInterval = 1500,
 }) {
   let isKill = false;
@@ -386,6 +439,14 @@ export default function ParticleBlackHole({
   const spiral = new Spiral(
     { height: canvas.height, width: canvas.width },
     spiralOptions
+  );
+  const killStageSpiral = new Spiral(
+    { height: canvas.height, width: canvas.width },
+    {
+      ...spiralOptions,
+      spiralType: "fermat",
+      noRandomCenter: true,
+    }
   );
   const centerSpiral = new Spiral(
     { height: canvas.height, width: canvas.width },
@@ -435,10 +496,11 @@ export default function ParticleBlackHole({
       () => {
         centerSpiral.setSize(rect);
         spiral.setSize(rect);
+        killStageSpiral.setSize(rect);
         maxRadialDistance = spiral.maxRadialDistance;
         killZone.updateMaxKillRadius(spiral.maxRadialDistance / 2);
         killZone.setCenter(spiral.center());
-
+        killStageSpiral.setCenter(spiral.center());
         paused = false;
       },
       useTimeout ? 100 : 0
@@ -451,7 +513,7 @@ export default function ParticleBlackHole({
   });
 
   const particles = []; // Store all particles
-
+  const swallowedParticles = [];
   // Add a new particle to the canvas
   function addParticle(amount, auctionTypeCode) {
     const colorTuple =
@@ -459,8 +521,11 @@ export default function ParticleBlackHole({
 
     const particle = new Particle({
       ctx,
-      colorTuple,
       amount,
+      options: {
+        particleType: "circle",
+        colorTuple,
+      },
     });
     particles.push(particle); // Add new particle to the array
   }
@@ -482,14 +547,14 @@ export default function ParticleBlackHole({
 
     if (offsetRadialDistance >= inflectionPoint) {
       offsetThetaChange = hyperbolicInterpolation(
-        Math.min(offsetRadialDistance, maxDistance),
+        offsetRadialDistance,
         { min: inflectionPoint, max: maxDistance },
         { min: spiralOptions.seedRotateSpeedMultiplier, max: minThetaChange },
         1 / 3
       );
     } else {
       offsetThetaChange = hyperbolicInterpolation(
-        Math.max(offsetRadialDistance, minDistance),
+        offsetRadialDistance,
         { min: minDistance, max: inflectionPoint },
         { min: minThetaChange, max: spiralOptions.seedRotateSpeedMultiplier },
         3
@@ -527,6 +592,7 @@ export default function ParticleBlackHole({
       y: coordinates.y - spiralCenter.y,
     };
     spiral.setCenterOffset(offset);
+    killStageSpiral.setCenter(spiral.center());
     killZone.setCenter(spiral.center());
   };
   addCenterOffset();
@@ -534,113 +600,147 @@ export default function ParticleBlackHole({
   let maxRadialDistanceIntervalCount = 0;
   let lastMaxRadialDistance = 0.1 * maxRadialDistance;
   let nextMaxRadialDistance = 0.5 * maxRadialDistance;
+
+  const stage1KillCount = 100;
+  const stage2KillCount = 200;
+  const stage3KillCount = 300;
+
+  const animateStage1Particle = (particle) => {
+    let _paused = paused;
+    const killZoneRadius = killZone.currentRadius();
+    if (
+      !isKill &&
+      (particle.radialDistance() < killZoneRadius || particle.theta() === 0) &&
+      !particle.swallowed
+    ) {
+      killZone.addValue(particle.amount);
+      particle.swallowed = true;
+      swallowedParticles.push(particle.clone({ initialRadialDistance: 0 }));
+    } else if (particle.radialDistance() < killZoneRadius) {
+      _paused = true;
+    }
+
+    const rotateSpeedMultipler = linearInterpolation(
+      killZoneRadius * 2 -
+        killZone.distanceFromCenter(particle.lastCoordinates),
+      { min: 0, max: 20 },
+      { min: 1, max: 1.5 }
+    );
+
+    return particle.rotate(spiral, rotateSpeedMultipler, _paused);
+  };
+
+  const animateStage2Particle = (particle) => {
+    const rotateSpeedMultipler = 1;
+    return particle.rotate(spiral, rotateSpeedMultipler);
+  };
+
   function animate() {
     if (!isKill) {
       ctx.fillStyle = "rgb(0 0 0 / 5%)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     let adjMaxRadialDistance = maxRadialDistance;
-    if (killCount > 0) {
-      spiral.seedRotateSpeed = hyperbolicInterpolation(
-        killCount,
-        { min: 0, max: maxKillCount },
-        {
-          min: spiral.baseSeedRotateSpeed(),
-          max: spiral.baseSeedRotateSpeed() * -20,
-        },
-        1 / 4
-      );
+    if (killCount === 0) {
+      if (maxRadialDistanceCount > 1.5 * changeMaxRadialDistanceInterval) {
+        maxRadialDistanceIntervalCount++;
+        lastMaxRadialDistance = nextMaxRadialDistance;
+        const outputRange = {
+          min: 0.6 * adjMaxRadialDistance,
+          max: 1 * adjMaxRadialDistance,
+        };
+        if (
+          lastMaxRadialDistance > 0.8 * adjMaxRadialDistance ||
+          lastMaxRadialDistance < 0.6 * adjMaxRadialDistance
+        ) {
+          outputRange.min = 0.6 * adjMaxRadialDistance;
+          outputRange.max = 0.8 * adjMaxRadialDistance;
+        } else if (Math.random() > 0.4 * spiral.initialAspectRatio) {
+          outputRange.min = 0.8 * adjMaxRadialDistance;
+          outputRange.max = 1 * adjMaxRadialDistance;
+        } else {
+          outputRange.min = 0.4 * adjMaxRadialDistance;
+          outputRange.max = 0.6 * adjMaxRadialDistance;
+        }
+        nextMaxRadialDistance = linearInterpolation(
+          Math.random(),
+          { min: 0, max: 1 },
+          outputRange
+        );
+        maxRadialDistanceCount = 0;
+      } else {
+        maxRadialDistanceCount++;
+      }
       adjMaxRadialDistance = hyperbolicInterpolation(
-        killCount,
-        { min: 0, max: maxKillCount },
-        { min: maxRadialDistance, max: 0 },
-        1 / 5
+        maxRadialDistanceCount,
+        { min: 0, max: changeMaxRadialDistanceInterval },
+        { min: lastMaxRadialDistance, max: nextMaxRadialDistance },
+        1
       );
     }
 
-    if (maxRadialDistanceCount > 1.5 * changeMaxRadialDistanceInterval) {
-      maxRadialDistanceIntervalCount++;
-      lastMaxRadialDistance = nextMaxRadialDistance;
-      const outputRange = {
-        min: 0.6 * adjMaxRadialDistance,
-        max: 1 * adjMaxRadialDistance,
-      };
-      if (
-        lastMaxRadialDistance > 0.8 * adjMaxRadialDistance ||
-        lastMaxRadialDistance < 0.6 * adjMaxRadialDistance
-      ) {
-        outputRange.min = 0.6 * adjMaxRadialDistance;
-        outputRange.max = 0.8 * adjMaxRadialDistance;
-      } else if (Math.random() > 0.4 * spiral.initialAspectRatio) {
-        outputRange.min = 0.8 * adjMaxRadialDistance;
-        outputRange.max = 1 * adjMaxRadialDistance;
-      } else {
-        outputRange.min = 0.4 * adjMaxRadialDistance;
-        outputRange.max = 0.6 * adjMaxRadialDistance;
-      }
-      nextMaxRadialDistance = linearInterpolation(
-        Math.random(),
-        { min: 0, max: 1 },
-        outputRange
-      );
-      maxRadialDistanceCount = 0;
-    } else {
-      maxRadialDistanceCount++;
-    }
-    adjMaxRadialDistance = hyperbolicInterpolation(
-      Math.min(maxRadialDistanceCount, changeMaxRadialDistanceInterval),
-      { min: 0, max: changeMaxRadialDistanceInterval },
-      { min: lastMaxRadialDistance, max: nextMaxRadialDistance },
-      1
-    );
+    let newMaxKillRadius = adjMaxRadialDistance / 2;
 
     if (killZone.currentRadius() > 10) {
       addCenterOffset();
     }
     if (!isKill) {
       spiral.setMaxRadialDistance(adjMaxRadialDistance);
-      killZone.updateMaxKillRadius(adjMaxRadialDistance / 2);
+      killZone.updateMaxKillRadius(newMaxKillRadius);
     }
 
-    particles.forEach((particle, idx) => {
-      let _paused = paused;
-      if (
-        !isKill &&
-        (particle.radialDistance() < killZone.currentRadius() ||
-          particle.theta() === 0) &&
-        !particle.swallowed
-      ) {
-        killZone.addValue(particle.amount());
-        particle.swallowed = true;
-      } else if (particle.radialDistance() < killZone.currentRadius()) {
-        _paused = true;
-      }
-
-      const isDone = particle.rotate(spiral, killZone, _paused);
-
-      if (isDone) {
-        particles.splice(idx, 1);
-      }
-    });
-    killZone.draw(ctx);
-    if (isKill) {
-      const alpha = killCount / maxKillCount;
-      ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const maxRadius = adjMaxRadialDistance / 2;
-
-      const newMaxKillRadius = hyperbolicInterpolation(
-        killCount,
-        { min: 0, max: maxKillCount },
-        { min: maxRadius, max: 0 },
-        5
-      );
-      killZone.updateMaxKillRadius(newMaxKillRadius);
-      if (killCount < maxKillCount) {
-        killCount++;
-      } else {
+    if (killCount < stage1KillCount) {
+      particles.forEach((particle, idx) => {
+        const isDone = animateStage1Particle(particle);
+        if (isDone) {
+          particles.splice(idx, 1);
+        }
+      });
+    } else if (killCount > stage3KillCount) {
+      if (swallowedParticles.length === 0) {
         onDone?.();
         return;
+      }
+      swallowedParticles.forEach((particle, idx) => {
+        const isDone = animateStage2Particle(particle);
+        if (isDone) {
+          swallowedParticles.splice(idx, 1);
+        }
+      });
+    }
+    killZone.draw(ctx);
+    if (isKill) {
+      try {
+        if (killCount < stage2KillCount) {
+          ctx.fillStyle = `rgba(0, 0, 0, 0.3)`;
+        } else {
+          ctx.fillStyle = `rgba(0, 0, 0, 0.1)`;
+        }
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (killCount < stage1KillCount) {
+          newMaxKillRadius = hyperbolicInterpolation(
+            killCount,
+            { min: 0, max: stage1KillCount },
+            {
+              min: newMaxKillRadius,
+              max: Math.max(canvas.width, canvas.height),
+            },
+            2
+          );
+        } else if (killCount < stage2KillCount) {
+          newMaxKillRadius = hyperbolicInterpolation(
+            killCount,
+            { min: stage1KillCount, max: stage2KillCount },
+            { min: Math.max(canvas.width, canvas.height), max: 0 },
+            10
+          );
+        } else {
+          newMaxKillRadius = 0;
+        }
+        killZone.updateMaxKillRadius(newMaxKillRadius);
+        killCount++;
+      } catch (e) {
+        console.log(e);
       }
     }
     requestAnimationFrame(animate);

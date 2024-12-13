@@ -3,6 +3,7 @@ export const linearInterpolation = (
   inputRange = { min: 0, max: 300 },
   outputRange = { min: 1, max: 10 }
 ) => {
+  value = Math.min(Math.max(value, inputRange.min), inputRange.max);
   // First normalize the input value to 0-1 range
   const normalizedValue =
     (value - inputRange.min) / (inputRange.max - inputRange.min);
@@ -18,6 +19,7 @@ export const hyperbolicInterpolation = (
   outputRange = { min: 1, max: 10 },
   power = 2
 ) => {
+  value = Math.min(Math.max(value, inputRange.min), inputRange.max);
   // Normalize input value to 0-1 range
   const normalizedValue =
     (value - inputRange.min) / (inputRange.max - inputRange.min);

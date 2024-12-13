@@ -76,7 +76,6 @@ export default function ScreenSaverController(canvasId) {
           seedRotateSpeedMultiplier: 0.0005, // lower multiplier means slower rotation
           particleSizeRatio: 1 / 30, // lower ratio means smaller particles
         },
-        maxKillCount: 500,
         changeMaxRadialDistanceInterval: 3000,
       });
       onBidRefreshInfo = screenSaver.onBidRefreshInfo;
