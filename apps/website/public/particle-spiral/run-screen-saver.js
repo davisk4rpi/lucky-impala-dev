@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=5";
+import ParticleBlackHole from "./particle-black-hole.js?v=6";
 import {
   simulateBidding,
   linearInterpolation,
@@ -87,8 +87,8 @@ export default function ScreenSaverController(canvasId) {
             baseFrameRandom,
             { min: -1, max: 1 },
             {
-              min: 7000,
-              max: 1000,
+              min: 1000,
+              max: 7000,
             }
           ),
           clockwise: Math.random() > 0.5,

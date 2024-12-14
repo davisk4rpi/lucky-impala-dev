@@ -651,8 +651,9 @@ export default function ParticleBlackHole({
 
   const stage1KillCount = Math.min(150, baseFrameCount / 10);
   const stage2KillCount = stage1KillCount * 2;
-  const stage3KillCount = stage1KillCount * 2.5;
-  const stage4KillCount = Math.max(stage3KillCount * 2, 500);
+  const stage3KillCount = stage2KillCount + 50;
+  const stage4KillCount = stage3KillCount + 200;
+  const stage5KillCount = stage4KillCount + 300;
 
   const animateStage1Particle = (particle) => {
     let _paused = paused;
@@ -758,7 +759,7 @@ export default function ParticleBlackHole({
           swallowedParticles.splice(idx, 1);
         }
       });
-    } else if (killCount > stage4KillCount) {
+    } else if (killCount > stage5KillCount) {
       onDone?.();
       return;
     }
@@ -767,10 +768,14 @@ export default function ParticleBlackHole({
       try {
         if (killCount < stage2KillCount) {
           ctx.fillStyle = `rgba(0, 0, 0, 0.2)`;
-        } else {
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (killCount < stage3KillCount) {
           ctx.fillStyle = `rgba(0, 0, 0, 0.01)`;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (killCount > stage4KillCount && killCount < stage5KillCount) {
+          ctx.fillStyle = `rgba(0, 0, 0, 0.03)`;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
         if (killCount < stage1KillCount) {
           newMaxKillRadius = hyperbolicInterpolation(
             killCount,
