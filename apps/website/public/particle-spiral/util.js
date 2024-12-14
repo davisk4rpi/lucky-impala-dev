@@ -74,6 +74,25 @@ export const COLORS = {
   default: [16, 185, 129], // #10b981 emerald-500
 };
 
+export const PRISTINE_COLORS = {
+  "christmas-card": [190, 29, 35],
+  daily: [193, 2, 48],
+  gear: [255, 149, 5],
+  giveback: [133, 158, 188],
+  helmet: [48, 188, 237],
+  jersey: [246, 247, 64],
+  monthly: [40, 40, 40],
+  "new-year": [40, 40, 40],
+  "pop-culture": [1, 253, 246],
+  "sports-cards": [136, 132, 255],
+  "sports-moments": [22, 219, 147],
+  "ten-minute": [138, 36, 50],
+  weekly: [174, 180, 169],
+  "weekly-art": [255, 255, 255],
+  "weekly-coin": [218, 163, 11],
+  default: [255, 230, 0],
+};
+
 export function getColor(auctionTypeCode) {
   return COLORS.hasOwnProperty(auctionTypeCode)
     ? COLORS[auctionTypeCode]

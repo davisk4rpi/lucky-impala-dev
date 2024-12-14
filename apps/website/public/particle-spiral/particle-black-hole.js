@@ -3,7 +3,7 @@ import {
   linearInterpolation,
   hyperbolicInterpolation,
   getRandomValueFromArray,
-} from "./util.js?v=4";
+} from "./util.js?v=5";
 
 // general arch spirals
 // r = a + b * Math.pow(theta, 1/c)
@@ -309,7 +309,7 @@ function KillZone({
 
     ctx.beginPath();
     ctx.fillStyle = `rgba(0,0,0, 1)`;
-    ctx.arc(center.x, center.y, currentRadius + lineWidth / 2, 0, Math.PI * 2);
+    ctx.arc(center.x, center.y, currentRadius + lineWidth, 0, Math.PI * 2);
     ctx.fill();
     ctx.closePath();
     ctx.beginPath();
@@ -413,8 +413,6 @@ function Particle({ ctx, amount = 0, options = {} }) {
       );
     }
 
-    const oldTheta = state.theta;
-    const oldRadialDistance = state.radialDistance;
     const rotateSpeed =
       (spiral.seedRotateSpeed / scaleFactor) * rotateSpeedMultipler;
     if (Math.abs(state.theta) < rotateSpeed && state.theta !== 0) {
@@ -440,7 +438,7 @@ function Particle({ ctx, amount = 0, options = {} }) {
       state.thetaOffset
     );
     if (
-      absRadialDistance > spiral.maxRadialDistance &&
+      absRadialDistance > 1.3 * spiral.maxRadialDistance &&
       (coordinates.x < 0 ||
         coordinates.y < 0 ||
         coordinates.x > ctx.canvas.width ||
@@ -469,6 +467,7 @@ export default function ParticleBlackHole({
   jackpot = 10000,
   spiralOptions = DEFAULT_SPIRAL_OPTIONS,
   centerSpiralSpeedRatio = 1 / 15,
+  trailLength = 3,
 }) {
   const baseFrameCount =
     spiralOptions?.baseFrameCount ?? DEFAULT_SPIRAL_OPTIONS.baseFrameCount;
@@ -578,9 +577,6 @@ export default function ParticleBlackHole({
     particles.push(particle); // Add new particle to the array
   }
 
-  let maxRadialDistanceCount = 0;
-  let killCount = 0;
-
   let offsetTheta = (Math.random() * Math.PI) / 2;
   let offsetRadialDistance = 0;
   let offsetThetaOffset = Math.random() * Math.PI * 2;
@@ -643,17 +639,20 @@ export default function ParticleBlackHole({
     killStageSpiral.setCenter(spiral.center());
     killZone.setCenter(spiral.center());
   };
-  addCenterOffset();
 
   let maxRadialDistanceIntervalCount = 0;
   let lastMaxRadialDistance = 0.1 * maxRadialDistance;
   let nextMaxRadialDistance = 0.5 * maxRadialDistance;
 
+  let maxRadialDistanceCount = 0;
+  let killCount = 0;
+  let killCount2 = 0;
+
   const stage1KillCount = Math.min(150, baseFrameCount / 10);
   const stage2KillCount = stage1KillCount * 2;
   const stage3KillCount = stage2KillCount + 50;
   const stage4KillCount = stage3KillCount + 200;
-  const stage5KillCount = stage4KillCount + 300;
+  const stage1KillCount2 = 300;
 
   const animateStage1Particle = (particle) => {
     let _paused = paused;
@@ -689,9 +688,15 @@ export default function ParticleBlackHole({
     return particle.rotate(killStageSpiral);
   };
 
+  const trailAlpha = linearInterpolation(
+    trailLength,
+    { min: 1, max: 10 },
+    { min: 0.2, max: 0.03 }
+  );
+  console.log('trailAlpha', trailAlpha)
   function animate() {
     if (!isKill) {
-      ctx.fillStyle = "rgb(0 0 0 / 5%)";
+      ctx.fillStyle = `rgb(0 0 0 / ${trailAlpha})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     let adjMaxRadialDistance = maxRadialDistance;
@@ -735,9 +740,7 @@ export default function ParticleBlackHole({
 
     let newMaxKillRadius = adjMaxRadialDistance / 2;
 
-    if (killZone.currentRadius() > 10) {
-      addCenterOffset();
-    }
+    addCenterOffset();
     if (!isKill) {
       spiral.setMaxRadialDistance(adjMaxRadialDistance);
       killZone.updateMaxKillRadius(newMaxKillRadius);
@@ -750,16 +753,19 @@ export default function ParticleBlackHole({
           particles.splice(idx, 1);
         }
       });
-    } else if (killCount > stage3KillCount && killCount < stage4KillCount) {
-      if (swallowedParticles.length === 0 && killCount > baseFrameCount) {
+    } else if (killCount > stage3KillCount) {
+      if (swallowedParticles.length === 0) {
+        killCount2++;
+      } else {
+        swallowedParticles.forEach((particle, idx) => {
+          const isDone = animateStage2Particle(particle);
+          if (isDone) {
+            swallowedParticles.splice(idx, 1);
+          }
+        });
       }
-      swallowedParticles.forEach((particle, idx) => {
-        const isDone = animateStage2Particle(particle);
-        if (isDone) {
-          swallowedParticles.splice(idx, 1);
-        }
-      });
-    } else if (killCount > stage5KillCount) {
+    }
+    if (killCount2 > stage1KillCount2) {
       onDone?.();
       return;
     }
@@ -772,8 +778,8 @@ export default function ParticleBlackHole({
         } else if (killCount < stage3KillCount) {
           ctx.fillStyle = `rgba(0, 0, 0, 0.01)`;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-        } else if (killCount > stage4KillCount && killCount < stage5KillCount) {
-          ctx.fillStyle = `rgba(0, 0, 0, 0.03)`;
+        } else {
+          ctx.fillStyle = `rgba(0, 0, 0, 0.02)`;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         if (killCount < stage1KillCount) {

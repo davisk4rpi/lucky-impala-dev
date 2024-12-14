@@ -1,16 +1,59 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=6";
+import ParticleBlackHole from "./particle-black-hole.js?v=7";
 import {
   simulateBidding,
   linearInterpolation,
-  hexToRgbTuple,
+  hyperbolicInterpolation,
   COLORS,
-} from "./util.js?v=4";
+  PRISTINE_COLORS,
+} from "./util.js?v=5";
 
+let isPristine = false;
+const urlParams = new URLSearchParams(window.location.search);
+isPristine = urlParams.get("c") === "pristine";
+let jackpot = parseInt(urlParams.get("j") ?? "0");
+let speed = urlParams.get("s");
+let baseFrameRange = {
+  min: isPristine ? 3000 : 1000,
+  max: 7000,
+};
+const trailLengthConfig = {
+  range: {
+    min: 2,
+    max: 10,
+  },
+  power: 1 / 2,
+};
+if (speed === "slow") {
+  baseFrameRange = {
+    min: 6000,
+    max: 10000,
+  };
+  if (!jackpot) {
+    jackpot = 30000;
+  }
+  trailLengthConfig.range.min = 10;
+  trailLengthConfig.range.max = 2;
+  trailLengthConfig.power = 1 / 3;
+} else if (speed === "fast") {
+  baseFrameRange = {
+    min: isPristine ? 1000 : 500,
+    max: 3000,
+  };
+  trailLengthConfig.range.min = 1;
+  trailLengthConfig.range.max = 9;
+  trailLengthConfig.power = 1 / 3;
+  if (!jackpot) {
+    jackpot = 5000;
+  }
+}
+if (!jackpot) {
+  jackpot = 20000;
+}
 export default function ScreenSaverController(canvasId) {
   let screenSaver;
   let killed = false;
   const getAuctionTypeColors = (async () => {
-    return COLORS;
+    return isPristine ? PRISTINE_COLORS : COLORS;
   })();
 
   const canvas = document.getElementById(canvasId);
@@ -86,28 +129,38 @@ export default function ScreenSaverController(canvasId) {
           baseFrameCount: linearInterpolation(
             baseFrameRandom,
             { min: -1, max: 1 },
-            {
-              min: 1000,
-              max: 7000,
-            }
+            baseFrameRange
           ),
           clockwise: Math.random() > 0.5,
         },
         centerSpiralSpeedRatio: 1 / 15,
+        trailLength: hyperbolicInterpolation(
+          Math.random(),
+          { min: 0, max: 1 },
+          trailLengthConfig.range,
+          trailLengthConfig.power
+        ),
       });
       onBidRefreshInfo = screenSaver.onBidRefreshInfo;
     };
     start();
-    simulateBidding(
-      (bid) => {
-        onBidRefreshInfo?.(bid);
-      },
-      0,
-      simulateBiddingConfig
-    );
-    // socket.on("BidRefreshInfo", (message) => {
-    //   onBidRefreshInfo?.(message);
-    // });
+    if (isPristine) {
+      const socket = io("https://event.pristineauction.com", {
+        transports: ["websocket"],
+      });
+
+      socket.on("BidRefreshInfo", (message) => {
+        onBidRefreshInfo?.(message);
+      });
+    } else {
+      simulateBidding(
+        (bid) => {
+          onBidRefreshInfo?.(bid);
+        },
+        0,
+        simulateBiddingConfig
+      );
+    }
   }
 
   return {
@@ -115,8 +168,6 @@ export default function ScreenSaverController(canvasId) {
     kill,
   };
 }
-
-console.log("run-screen-saver loaded");
 
 const screenSaver = new ScreenSaverController("primary-canvas");
 screenSaver.initialize();
