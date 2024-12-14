@@ -1,5 +1,10 @@
 import ParticleBlackHole from "./particle-black-hole.js?v=5";
-import { simulateBidding, hexToRgbTuple, COLORS } from "./util.js?v=4";
+import {
+  simulateBidding,
+  linearInterpolation,
+  hexToRgbTuple,
+  COLORS,
+} from "./util.js?v=4";
 
 export default function ScreenSaverController(canvasId) {
   let screenSaver;
@@ -59,6 +64,9 @@ export default function ScreenSaverController(canvasId) {
       isKill: false,
     };
     const start = () => {
+      const speedRandomFactor = Math.random() + 1;
+      const baseFrameRandom =
+        Math.pow(Math.random(), 3) * (Math.random() > 0.5 ? 1 : -1);
       screenSaver = ParticleBlackHole({
         canvas,
         ctx,
@@ -70,13 +78,22 @@ export default function ScreenSaverController(canvasId) {
           }
         },
         auctionTypeColors,
-        jackpot: 10000,
+        jackpot: 20000,
         spiralOptions: {
           spiralType: "random",
-          seedRotateSpeedMultiplier: 0.0005, // lower multiplier means slower rotation
+          seedRotateSpeedMultiplier: speedRandomFactor, // lower multiplier means slower rotation
           particleSizeRatio: 1 / 30, // lower ratio means smaller particles
+          baseFrameCount: linearInterpolation(
+            baseFrameRandom,
+            { min: -1, max: 1 },
+            {
+              min: 7000,
+              max: 1000,
+            }
+          ),
+          clockwise: Math.random() > 0.5,
         },
-        changeMaxRadialDistanceInterval: 3000,
+        centerSpiralSpeedRatio: 1 / 15,
       });
       onBidRefreshInfo = screenSaver.onBidRefreshInfo;
     };

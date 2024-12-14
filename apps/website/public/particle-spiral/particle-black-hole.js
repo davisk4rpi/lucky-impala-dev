@@ -21,16 +21,22 @@ import {
 
 const DEFAULT_SPIRAL_OPTIONS = {
   spiralType: "random",
-  seedRotateSpeedMultiplier: 0.0005,
+  seedRotateSpeedMultiplier: 1,
   particleSizeRatio: 1 / 40,
   noRandomCenter: false,
+  baseFrameCount: 3000,
+  clockwise: false,
+  cRandomRange: { min: 0.5, max: 2 },
 };
 function Spiral(rect, options = {}) {
   const _options = { ...DEFAULT_SPIRAL_OPTIONS, ...options };
   let bDivisor = 50;
-  let cRandom = Math.random() + 1;
   let particleSizeRandomFactor = Math.random() + 1;
-  let rotateSpeedRandomFactor = Math.random() + 0.5;
+  let cRandom = linearInterpolation(
+    Math.random(),
+    { min: 0, max: 1 },
+    { min: _options.cRandomRange.min, max: _options.cRandomRange.max }
+  );
 
   const aspectRatio =
     Math.max(rect.width, rect.height) / Math.min(rect.width, rect.height);
@@ -54,20 +60,22 @@ function Spiral(rect, options = {}) {
   let _center = { x: 0, y: 0 };
   let particleSizeMultipler =
     particleSizeRandomFactor * _options.particleSizeRatio;
-  let seedRotateSpeedMultiplier =
-    _options.seedRotateSpeedMultiplier * rotateSpeedRandomFactor;
+  let seedRotateSpeedMultiplier = _options.seedRotateSpeedMultiplier;
   this.a = 0;
   this.b = 0;
   this.c = 1;
   this.maxRadialDistance = 0;
   this.maxTheta = 0;
+  this.inverseMaxTheta = 0;
   this.seedRotateSpeed = 0;
   this.seedMaxParticleSize = 0;
   this.spiralType = _options.spiralType;
   this.initialAspectRatio = aspectRatio;
+  let _clockwise = 1;
+  _clockwise = _options.clockwise ? -1 : 1;
 
   this.baseSeedRotateSpeed = () =>
-    seedRotateSpeedMultiplier * Math.sqrt(this.maxRadialDistance / 2);
+    (seedRotateSpeedMultiplier * this.maxTheta) / _options.baseFrameCount;
 
   this.centerOffset = () => _centerOffset;
   this.center = () => {
@@ -91,36 +99,45 @@ function Spiral(rect, options = {}) {
     _centerOffset.y = y;
   };
 
-  this.getRadialDistance = (theta = 0, bFactor = 1) => {
-    let _theta = Math.abs(theta);
-    let power = 1 / this.c;
-    if (_theta === 0) {
-      return this.a;
-    } else if (theta < 0) {
-      power = this.c;
+  this.adjustedC = (theta) => {
+    if (theta <= 0) {
+      return this.c;
     }
-    return this.a + bFactor * this.b * Math.pow(_theta, power);
+    return 1 / this.c;
   };
 
-  this.getTheta = (radialDistance, bFactor = 1) => {
+  this.getRadialDistance = (theta = 0, bFactor = 1) => {
+    let _theta = Math.abs(theta);
+    if (_theta === 0) {
+      return this.a;
+    }
+    return this.a + bFactor * this.b * Math.pow(_theta, this.adjustedC(theta));
+  };
+
+  this.getTheta = (radialDistance, bFactor = 1, inverse = false) => {
     if (radialDistance === this.a) {
       return 0;
     }
+    let power = this.c;
+    if (inverse) {
+      power = 1 / this.c;
+    }
     return Math.pow(
       Math.abs((radialDistance - this.a) / (bFactor * this.b)),
-      this.c
+      power
     );
   };
 
   this.getCoordinates = (radialDistance, theta, thetaOffset = 0) => {
     let { x, y } = this.center();
+    let _theta = theta;
     const xLength = radialDistance * Math.cos(Math.abs(theta) + thetaOffset);
     const yLength = radialDistance * Math.sin(Math.abs(theta) + thetaOffset);
-    if (theta < 0) {
-      x -= xLength;
+    if (_theta < 0) {
+      x -= xLength * _clockwise;
       y -= yLength;
     } else {
-      x += xLength;
+      x += xLength * _clockwise;
       y += yLength;
     }
     return {
@@ -130,15 +147,20 @@ function Spiral(rect, options = {}) {
   };
   this.calculateParticleSize = ({ radialDistance, theta, bFactor }) => {
     let _maxTheta = this.maxTheta;
-    if (!theta) {
-      theta = this.getTheta(radialDistance, bFactor);
+    let _theta = theta;
+    if (theta === undefined) {
+      _theta = this.getTheta(radialDistance, bFactor);
     }
     if (bFactor !== undefined) {
-      _maxTheta = this.maxTheta / Math.pow(bFactor, this.c);
+      if (_theta < 0) {
+        _maxTheta = this.inverseMaxTheta / Math.pow(bFactor, 1 / this.c);
+      } else {
+        _maxTheta = this.maxTheta / Math.pow(bFactor, this.c);
+      }
     }
     let particleSize = linearInterpolation(
       Math.abs(theta),
-      { min: 0, max: _maxTheta },
+      { min: 0, max: Math.abs(_maxTheta) },
       { min: 1, max: this.seedMaxParticleSize }
     );
     return particleSize;
@@ -149,6 +171,8 @@ function Spiral(rect, options = {}) {
     this.b = this.maxRadialDistance / Math.pow(bDivisor, 1 / this.c);
     this.seedMaxParticleSize = this.maxRadialDistance * particleSizeMultipler;
     this.maxTheta = this.getTheta(this.maxRadialDistance);
+    this.inverseMaxTheta = this.getTheta(this.maxRadialDistance, 1, true);
+    this.seedRotateSpeed = this.baseSeedRotateSpeed();
   };
 
   this.setSize = (rect) => {
@@ -174,7 +198,7 @@ function Spiral(rect, options = {}) {
     const maxRadialDistance =
       Math.sqrt(Math.pow(rect.width, 2) + Math.pow(rect.height, 2)) / 2;
     this.setMaxRadialDistance(maxRadialDistance);
-    this.seedRotateSpeed = this.baseSeedRotateSpeed();
+    // this.seedRotateSpeed = this.baseSeedRotateSpeed();
   };
   this.setSize(rect);
 }
@@ -357,7 +381,7 @@ function Particle({ ctx, amount = 0, options = {} }) {
 
   this.theta = () => state.theta;
   this.radialDistance = () => state.radialDistance;
-  this.clone = ({ initialRadialDistance }) => {
+  this.clone = ({ initialRadialDistance, initialAlpha }) => {
     const particle = new Particle({
       ctx,
       amount,
@@ -367,7 +391,7 @@ function Particle({ ctx, amount = 0, options = {} }) {
         thetaOffset: state.thetaOffset,
         bFactor: state.bFactor,
         initialRadialDistance,
-        initialAlpha: alpha,
+        initialAlpha,
       },
     });
     return particle;
@@ -375,7 +399,7 @@ function Particle({ ctx, amount = 0, options = {} }) {
 
   const draw =
     this.particleType === "circle" ? drawParticleCircle : drawParticleStroke;
-  this.rotate = (spiral, rotateSpeedMultipler, paused = false) => {
+  this.rotate = (spiral, rotateSpeedMultipler = 1, paused = false) => {
     stepAlpha();
     if (state.radialDistance === Infinity) {
       state.radialDistance = spiral.maxRadialDistance;
@@ -389,6 +413,8 @@ function Particle({ ctx, amount = 0, options = {} }) {
       );
     }
 
+    const oldTheta = state.theta;
+    const oldRadialDistance = state.radialDistance;
     const rotateSpeed =
       (spiral.seedRotateSpeed / scaleFactor) * rotateSpeedMultipler;
     if (Math.abs(state.theta) < rotateSpeed && state.theta !== 0) {
@@ -400,15 +426,13 @@ function Particle({ ctx, amount = 0, options = {} }) {
       }
     }
     state.radialDistance = spiral.getRadialDistance(state.theta, state.bFactor);
+
     const absRadialDistance = Math.abs(state.radialDistance);
     let particleSize =
       spiral.calculateParticleSize({
         theta: state.theta,
         bFactor: state.bFactor,
       }) * scaleFactor;
-    if (state.theta < 0) {
-      particleSize *= 2;
-    }
 
     const coordinates = spiral.getCoordinates(
       state.radialDistance,
@@ -444,8 +468,11 @@ export default function ParticleBlackHole({
   auctionTypeColors,
   jackpot = 10000,
   spiralOptions = DEFAULT_SPIRAL_OPTIONS,
-  changeMaxRadialDistanceInterval = 1500,
+  centerSpiralSpeedRatio = 1 / 15,
 }) {
+  const baseFrameCount =
+    spiralOptions?.baseFrameCount ?? DEFAULT_SPIRAL_OPTIONS.baseFrameCount;
+  const changeMaxRadialDistanceInterval = baseFrameCount / 2;
   let isKill = false;
   function kill() {
     isKill = true;
@@ -461,14 +488,18 @@ export default function ParticleBlackHole({
     { height: canvas.height, width: canvas.width },
     {
       ...spiralOptions,
-      spiralType: "fermat",
+      baseFrameCount,
       noRandomCenter: true,
+      clockwise: !(spiralOptions.clockwise ?? false),
+      cRandomRange: { min: 1.1, max: 2.5 },
     }
   );
   const centerSpiral = new Spiral(
     { height: canvas.height, width: canvas.width },
     {
-      seedRotateSpeedMultiplier: spiralOptions.seedRotateSpeedMultiplier,
+      ...spiralOptions,
+      seedRotateSpeedMultiplier:
+        spiralOptions.seedRotateSpeedMultiplier * centerSpiralSpeedRatio,
     }
   );
   let maxRadialDistance = spiral.maxRadialDistance;
@@ -483,7 +514,7 @@ export default function ParticleBlackHole({
     killValue: jackpot,
   });
 
-  console.log(spiral, centerSpiral, killZone, killColor);
+  console.log({ spiral, killStageSpiral, centerSpiral, killZone, killColor });
 
   let timeout = null;
   let paused = false;
@@ -553,27 +584,27 @@ export default function ParticleBlackHole({
   let offsetTheta = (Math.random() * Math.PI) / 2;
   let offsetRadialDistance = 0;
   let offsetThetaOffset = Math.random() * Math.PI * 2;
-  let offsetThetaChange = spiralOptions.seedRotateSpeedMultiplier;
+  let offsetThetaChange = centerSpiral.seedRotateSpeed;
   let offsetThetaChangeDirection = 1;
 
   const addCenterOffset = () => {
     const inflectionPoint = 0.4 * spiral.nearestDeviceEdge;
     const maxDistance = 0.9 * spiral.nearestDeviceEdge;
     const minDistance = 0;
-    const minThetaChange = spiralOptions.seedRotateSpeedMultiplier / 5;
+    const minThetaChange = centerSpiral.seedRotateSpeed / 5;
 
     if (offsetRadialDistance >= inflectionPoint) {
       offsetThetaChange = hyperbolicInterpolation(
         offsetRadialDistance,
         { min: inflectionPoint, max: maxDistance },
-        { min: spiralOptions.seedRotateSpeedMultiplier, max: minThetaChange },
+        { min: centerSpiral.seedRotateSpeed, max: minThetaChange },
         1 / 3
       );
     } else {
       offsetThetaChange = hyperbolicInterpolation(
         offsetRadialDistance,
         { min: minDistance, max: inflectionPoint },
-        { min: minThetaChange, max: spiralOptions.seedRotateSpeedMultiplier },
+        { min: minThetaChange, max: centerSpiral.seedRotateSpeed },
         3
       );
     }
@@ -618,9 +649,10 @@ export default function ParticleBlackHole({
   let lastMaxRadialDistance = 0.1 * maxRadialDistance;
   let nextMaxRadialDistance = 0.5 * maxRadialDistance;
 
-  const stage1KillCount = 100;
-  const stage2KillCount = 200;
-  const stage3KillCount = 300;
+  const stage1KillCount = Math.min(150, baseFrameCount / 10);
+  const stage2KillCount = stage1KillCount * 2;
+  const stage3KillCount = stage1KillCount * 2.5;
+  const stage4KillCount = Math.max(stage3KillCount * 2, 500);
 
   const animateStage1Particle = (particle) => {
     let _paused = paused;
@@ -632,7 +664,12 @@ export default function ParticleBlackHole({
     ) {
       killZone.addValue(particle.amount);
       particle.swallowed = true;
-      swallowedParticles.push(particle.clone({ initialRadialDistance: 0 }));
+      swallowedParticles.push(
+        particle.clone({
+          initialRadialDistance: 0,
+          initialAlpha: 1,
+        })
+      );
     } else if (particle.radialDistance() < killZoneRadius) {
       _paused = true;
     }
@@ -648,8 +685,7 @@ export default function ParticleBlackHole({
   };
 
   const animateStage2Particle = (particle) => {
-    const rotateSpeedMultipler = 1;
-    return particle.rotate(killStageSpiral, rotateSpeedMultipler);
+    return particle.rotate(killStageSpiral);
   };
 
   function animate() {
@@ -713,10 +749,8 @@ export default function ParticleBlackHole({
           particles.splice(idx, 1);
         }
       });
-    } else if (killCount > stage3KillCount) {
-      if (swallowedParticles.length === 0) {
-        onDone?.();
-        return;
+    } else if (killCount > stage3KillCount && killCount < stage4KillCount) {
+      if (swallowedParticles.length === 0 && killCount > baseFrameCount) {
       }
       swallowedParticles.forEach((particle, idx) => {
         const isDone = animateStage2Particle(particle);
@@ -724,6 +758,9 @@ export default function ParticleBlackHole({
           swallowedParticles.splice(idx, 1);
         }
       });
+    } else if (killCount > stage4KillCount) {
+      onDone?.();
+      return;
     }
     killZone.draw(ctx);
     if (isKill) {
@@ -742,7 +779,7 @@ export default function ParticleBlackHole({
               min: killZone.radiusWhenKill,
               max: Math.max(canvas.width, canvas.height),
             },
-            1 / 2
+            1
           );
         } else if (killCount < stage2KillCount) {
           newMaxKillRadius = hyperbolicInterpolation(
