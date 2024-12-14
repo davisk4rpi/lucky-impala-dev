@@ -3,7 +3,7 @@ import {
   linearInterpolation,
   hyperbolicInterpolation,
   getRandomValueFromArray,
-} from "./util.js?v=6";
+} from "./util.js?v=7";
 
 // general arch spirals
 // r = a + b * Math.pow(theta, 1/c)

@@ -31,6 +31,22 @@ export const hyperbolicInterpolation = (
   );
 };
 
+export const bellCurveRandomInterpolation = (
+  outputRange = { min: 1, max: 10 },
+  power = 2
+) => {
+  const random =
+    Math.pow(Math.random(), power) * (Math.random() > 0.5 ? 1 : -1);
+  return linearInterpolation(
+    random,
+    {
+      min: -1,
+      max: 1,
+    },
+    outputRange
+  );
+};
+
 export const doublesidedHyperbolicInterpolation = (
   value,
   inputRange = { min: 0, max: 300 },

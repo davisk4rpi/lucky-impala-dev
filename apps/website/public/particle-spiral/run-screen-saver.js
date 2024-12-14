@@ -1,12 +1,10 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=8";
+import ParticleBlackHole from "./particle-black-hole.js?v=9";
 import {
   simulateBidding,
-  linearInterpolation,
-  hyperbolicInterpolation,
-  doublesidedHyperbolicInterpolation,
+  bellCurveRandomInterpolation,
   COLORS,
   PRISTINE_COLORS,
-} from "./util.js?v=6";
+} from "./util.js?v=7";
 
 let isPristine = false;
 const urlParams = new URLSearchParams(window.location.search);
@@ -14,13 +12,13 @@ isPristine = urlParams.get("c") === "pristine";
 let jackpot = parseInt(urlParams.get("j") ?? "0");
 let speed = urlParams.get("s");
 let baseFrameRange = {
-  min: isPristine ? 3000 : 1000,
+  min: 3000,
   max: 7000,
 };
 const trailLengthConfig = {
   range: {
-    min: 3,
-    max: 25,
+    min: 5,
+    max: 30,
   },
   power: 2,
 };
@@ -37,10 +35,10 @@ if (speed === "slow") {
   trailLengthConfig.power = 2;
 } else if (speed === "fast") {
   baseFrameRange = {
-    min: isPristine ? 1000 : 500,
-    max: 3000,
+    min: isPristine ? 2000 : 1000,
+    max: 4000,
   };
-  trailLengthConfig.range.min = -3;
+  trailLengthConfig.range.min = -5;
   trailLengthConfig.range.max = 20;
   trailLengthConfig.power = 3;
   if (!jackpot) {
@@ -110,8 +108,6 @@ export default function ScreenSaverController(canvasId) {
     };
     const start = () => {
       const speedRandomFactor = Math.random() + 1;
-      const baseFrameRandom =
-        Math.pow(Math.random(), 3) * (Math.random() > 0.5 ? 1 : -1);
       screenSaver = ParticleBlackHole({
         canvas,
         ctx,
@@ -128,17 +124,11 @@ export default function ScreenSaverController(canvasId) {
           spiralType: "random",
           seedRotateSpeedMultiplier: speedRandomFactor, // lower multiplier means slower rotation
           particleSizeRatio: 1 / 30, // lower ratio means smaller particles
-          baseFrameCount: linearInterpolation(
-            baseFrameRandom,
-            { min: -1, max: 1 },
-            baseFrameRange
-          ),
+          baseFrameCount: bellCurveRandomInterpolation(baseFrameRange),
           clockwise: Math.random() > 0.5,
         },
         centerSpiralSpeedRatio: 1 / 15,
-        trailLength: doublesidedHyperbolicInterpolation(
-          Math.random(),
-          { min: 0, max: 1 },
+        trailLength: bellCurveRandomInterpolation(
           trailLengthConfig.range,
           trailLengthConfig.power
         ),
