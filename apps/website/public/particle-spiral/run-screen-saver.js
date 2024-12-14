@@ -3,6 +3,7 @@ import {
   simulateBidding,
   linearInterpolation,
   hyperbolicInterpolation,
+  doublesidedHyperbolicInterpolation,
   COLORS,
   PRISTINE_COLORS,
 } from "./util.js?v=5";
@@ -18,10 +19,10 @@ let baseFrameRange = {
 };
 const trailLengthConfig = {
   range: {
-    min: 2,
+    min: -4,
     max: 10,
   },
-  power: 1 / 2,
+  power: 2,
 };
 if (speed === "slow") {
   baseFrameRange = {
@@ -33,15 +34,15 @@ if (speed === "slow") {
   }
   trailLengthConfig.range.min = 10;
   trailLengthConfig.range.max = 2;
-  trailLengthConfig.power = 1 / 3;
+  trailLengthConfig.power = 1.5;
 } else if (speed === "fast") {
   baseFrameRange = {
     min: isPristine ? 1000 : 500,
     max: 3000,
   };
-  trailLengthConfig.range.min = 1;
+  trailLengthConfig.range.min = -5;
   trailLengthConfig.range.max = 9;
-  trailLengthConfig.power = 1 / 3;
+  trailLengthConfig.power = 1.5;
   if (!jackpot) {
     jackpot = 5000;
   }
@@ -49,6 +50,7 @@ if (speed === "slow") {
 if (!jackpot) {
   jackpot = 20000;
 }
+console.log(trailLengthConfig);
 export default function ScreenSaverController(canvasId) {
   let screenSaver;
   let killed = false;
@@ -134,7 +136,7 @@ export default function ScreenSaverController(canvasId) {
           clockwise: Math.random() > 0.5,
         },
         centerSpiralSpeedRatio: 1 / 15,
-        trailLength: hyperbolicInterpolation(
+        trailLength: doublesidedHyperbolicInterpolation(
           Math.random(),
           { min: 0, max: 1 },
           trailLengthConfig.range,

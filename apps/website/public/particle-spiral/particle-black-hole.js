@@ -159,7 +159,7 @@ function Spiral(rect, options = {}) {
       }
     }
     let particleSize = linearInterpolation(
-      Math.abs(theta),
+      Math.abs(_theta),
       { min: 0, max: Math.abs(_maxTheta) },
       { min: 1, max: this.seedMaxParticleSize }
     );
@@ -298,7 +298,8 @@ function KillZone({
     } else {
       currentRadius = growRadius;
     }
-    const lineWidth = Math.max(2, calculateParticleSize(currentRadius)) / 2;
+
+    const lineWidth = Math.max(2, calculateParticleSize(currentRadius));
     if (currentRadius <= lineWidth) return;
     const center = this.center();
     const alpha = linearInterpolation(
@@ -309,7 +310,7 @@ function KillZone({
 
     ctx.beginPath();
     ctx.fillStyle = `rgba(0,0,0, 1)`;
-    ctx.arc(center.x, center.y, currentRadius + lineWidth, 0, Math.PI * 2);
+    ctx.arc(center.x, center.y, currentRadius + lineWidth / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.closePath();
     ctx.beginPath();
@@ -363,7 +364,7 @@ function Particle({ ctx, amount = 0, options = {} }) {
     this.amount,
     { min: 0, max: 10000 },
     { min: 1, max: 3 },
-    2
+    1 / 2
   );
 
   const state = {
@@ -594,14 +595,14 @@ export default function ParticleBlackHole({
         offsetRadialDistance,
         { min: inflectionPoint, max: maxDistance },
         { min: centerSpiral.seedRotateSpeed, max: minThetaChange },
-        1 / 3
+        3
       );
     } else {
       offsetThetaChange = hyperbolicInterpolation(
         offsetRadialDistance,
         { min: minDistance, max: inflectionPoint },
         { min: minThetaChange, max: centerSpiral.seedRotateSpeed },
-        3
+        1 / 3
       );
     }
     if (offsetRadialDistance >= maxDistance) {
@@ -690,10 +691,11 @@ export default function ParticleBlackHole({
 
   const trailAlpha = linearInterpolation(
     trailLength,
-    { min: 1, max: 10 },
-    { min: 0.2, max: 0.03 }
+    { min: -10, max: 10 },
+    { min: 0.4, max: 0.03 }
   );
-  console.log('trailAlpha', trailAlpha)
+  console.log("trailAlpha", trailAlpha);
+  console.log(trailLength);
   function animate() {
     if (!isKill) {
       ctx.fillStyle = `rgb(0 0 0 / ${trailAlpha})`;
@@ -730,11 +732,10 @@ export default function ParticleBlackHole({
       } else {
         maxRadialDistanceCount++;
       }
-      adjMaxRadialDistance = hyperbolicInterpolation(
+      adjMaxRadialDistance = linearInterpolation(
         maxRadialDistanceCount,
         { min: 0, max: changeMaxRadialDistanceInterval },
-        { min: lastMaxRadialDistance, max: nextMaxRadialDistance },
-        1
+        { min: lastMaxRadialDistance, max: nextMaxRadialDistance }
       );
     }
 
@@ -797,7 +798,7 @@ export default function ParticleBlackHole({
             killCount,
             { min: stage1KillCount, max: stage2KillCount },
             { min: Math.max(canvas.width, canvas.height), max: 0 },
-            10
+            1 / 10
           );
         } else {
           newMaxKillRadius = 0;

@@ -24,10 +24,46 @@ export const hyperbolicInterpolation = (
   const normalizedValue =
     (value - inputRange.min) / (inputRange.max - inputRange.min);
   // Apply hyperbolic transformation using power function
-  const transformedValue = Math.pow(normalizedValue, 1 / power);
+  const transformedValue = Math.pow(normalizedValue, power);
   // Scale to output range
   return (
     outputRange.min + transformedValue * (outputRange.max - outputRange.min)
+  );
+};
+
+export const doublesidedHyperbolicInterpolation = (
+  value,
+  inputRange = { min: 0, max: 300 },
+  outputRange = { min: 1, max: 10 },
+  power = 2
+) => {
+  const middleIn = (inputRange.min + inputRange.max) / 2;
+  const middleOut = (outputRange.min + outputRange.max) / 2;
+  if (value < middleIn) {
+    return hyperbolicInterpolation(
+      value,
+      {
+        min: inputRange.min,
+        max: middleIn,
+      },
+      {
+        min: outputRange.min,
+        max: middleOut,
+      },
+      1 / power
+    );
+  }
+  return hyperbolicInterpolation(
+    value,
+    {
+      min: middleIn,
+      max: inputRange.max,
+    },
+    {
+      min: middleOut,
+      max: outputRange.max,
+    },
+    power
   );
 };
 
