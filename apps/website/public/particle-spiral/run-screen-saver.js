@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=7";
+import ParticleBlackHole from "./particle-black-hole.js?v=8";
 import {
   simulateBidding,
   linearInterpolation,
@@ -6,7 +6,7 @@ import {
   doublesidedHyperbolicInterpolation,
   COLORS,
   PRISTINE_COLORS,
-} from "./util.js?v=5";
+} from "./util.js?v=6";
 
 let isPristine = false;
 const urlParams = new URLSearchParams(window.location.search);
@@ -19,8 +19,8 @@ let baseFrameRange = {
 };
 const trailLengthConfig = {
   range: {
-    min: -4,
-    max: 10,
+    min: 3,
+    max: 25,
   },
   power: 2,
 };
@@ -33,16 +33,16 @@ if (speed === "slow") {
     jackpot = 30000;
   }
   trailLengthConfig.range.min = 10;
-  trailLengthConfig.range.max = 2;
-  trailLengthConfig.power = 1.5;
+  trailLengthConfig.range.max = 40;
+  trailLengthConfig.power = 2;
 } else if (speed === "fast") {
   baseFrameRange = {
     min: isPristine ? 1000 : 500,
     max: 3000,
   };
-  trailLengthConfig.range.min = -5;
-  trailLengthConfig.range.max = 9;
-  trailLengthConfig.power = 1.5;
+  trailLengthConfig.range.min = -3;
+  trailLengthConfig.range.max = 20;
+  trailLengthConfig.power = 3;
   if (!jackpot) {
     jackpot = 5000;
   }

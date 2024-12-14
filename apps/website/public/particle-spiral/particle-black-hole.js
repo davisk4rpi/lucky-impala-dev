@@ -3,7 +3,7 @@ import {
   linearInterpolation,
   hyperbolicInterpolation,
   getRandomValueFromArray,
-} from "./util.js?v=5";
+} from "./util.js?v=6";
 
 // general arch spirals
 // r = a + b * Math.pow(theta, 1/c)
@@ -691,8 +691,8 @@ export default function ParticleBlackHole({
 
   const trailAlpha = linearInterpolation(
     trailLength,
-    { min: -10, max: 10 },
-    { min: 0.4, max: 0.03 }
+    { min: -20, max: 40 },
+    { min: 0.4, max: 0.015 }
   );
   console.log("trailAlpha", trailAlpha);
   console.log(trailLength);
