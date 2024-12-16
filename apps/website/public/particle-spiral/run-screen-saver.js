@@ -1,10 +1,13 @@
 import ParticleBlackHole from "./particle-black-hole.js?v=9";
 import {
-  simulateBidding,
   bellCurveRandomInterpolation,
   COLORS,
   PRISTINE_COLORS,
+  getRandomValueFromArray,
+  randomInversion,
+  randomInRange,
 } from "./util.js?v=7";
+import { ParticleGenerator } from "./particle-generator.js?v=0";
 
 let isPristine = false;
 const urlParams = new URLSearchParams(window.location.search);
@@ -48,7 +51,22 @@ if (speed === "slow") {
 if (!jackpot) {
   jackpot = 20000;
 }
-console.log(trailLengthConfig);
+
+const getInitialCenterRandomFactors = (aspectRatio) => {
+  const min = 1 - 0.2 / aspectRatio;
+  const max = 1 + 0.2 / aspectRatio;
+  let xFactor = randomInRange(min, max);
+  let yFactor = randomInRange(min, max);
+  return {
+    xFactor,
+    yFactor,
+  };
+};
+
+const deviceAspectRatio =
+  Math.max(window.innerWidth, window.innerHeight) /
+  Math.min(window.innerWidth, window.innerHeight);
+
 export default function ScreenSaverController(canvasId) {
   let screenSaver;
   let killed = false;
@@ -56,84 +74,78 @@ export default function ScreenSaverController(canvasId) {
     return isPristine ? PRISTINE_COLORS : COLORS;
   })();
 
-  const canvas = document.getElementById(canvasId);
-  const ctx = canvas.getContext("2d");
-
-  // Resize the canvas to match window size
-  function _resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    //Get the current size
-    const rect = canvas.getBoundingClientRect();
-    rect.height = canvas.height;
-    rect.width = canvas.width;
-
-    //Increase the size of the canvas
-    canvas.width = rect.width * devicePixelRatio;
-    canvas.height = rect.height * devicePixelRatio;
-
-    //Scale all drawings
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-
-    //Scale everything down using css
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
-    return rect;
-  }
-
-  function _keepAlive() {
-    try {
-      // TODO something to keep the page or device awake?
-      setTimeout(_keepAlive, 30000);
-    } catch (e) {
-      console.log(e);
-    }
-  }
+  const particleGenerator = new ParticleGenerator({
+    onNewParticle: ({ value, colorTuple }) => {
+      screenSaver?.addParticle?.({ value, colorTuple });
+    },
+  });
 
   function kill() {
     screenSaver.kill();
+    particleGenerator.kill();
     killed = true;
   }
 
   async function initialize() {
     const auctionTypeColors = await getAuctionTypeColors;
-    _keepAlive();
-    const rect = _resizeCanvas();
+    const [killColorTuple] = getRandomValueFromArray(
+      Object.values(auctionTypeColors)
+    );
 
-    let onBidRefreshInfo;
-    const simulateBiddingConfig = {
-      delayRange: Math.random() * 7000 + 3000,
-      isKill: false,
-    };
     const start = () => {
-      const speedRandomFactor = Math.random() + 1;
+      const skew = randomInversion(randomInRange(1, 3));
+      particleGenerator.delayRange = {
+        min: 500,
+        max: 5000,
+        skew,
+      };
+      const mainSpiralOptions = {
+        particleSizeRatio: 1 / 30, // lower ratio means smaller particles
+        baseFrameCount: bellCurveRandomInterpolation(baseFrameRange),
+        clockwise: Math.random() > 0.5,
+        c: randomInRange(0.5, 2),
+        randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
+      };
+
+      let intervalId;
       screenSaver = ParticleBlackHole({
-        canvas,
-        ctx,
-        rect,
+        canvasId,
         onDone: () => {
           if (!killed) {
-            simulateBiddingConfig.delayRange = Math.random() * 7000 + 1000;
             start();
+            clearInterval(intervalId);
           }
         },
-        auctionTypeColors,
-        jackpot: 20000,
-        spiralOptions: {
-          spiralType: "random",
-          seedRotateSpeedMultiplier: speedRandomFactor, // lower multiplier means slower rotation
-          particleSizeRatio: 1 / 30, // lower ratio means smaller particles
-          baseFrameCount: bellCurveRandomInterpolation(baseFrameRange),
+        killColorTuple,
+        jackpot,
+        mainSpiralOptions,
+        centerSpiralOptions: {
+          ...mainSpiralOptions,
+          baseFrameCount: mainSpiralOptions.baseFrameCount * 15,
+          randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
+          c: randomInRange(1, 3),
           clockwise: Math.random() > 0.5,
         },
-        centerSpiralSpeedRatio: 1 / 15,
+        killStageSpiralOptions: {
+          ...mainSpiralOptions,
+          randomCenter: { xFactor: 1, yFactor: 1 },
+          c: randomInRange(1.25, 2.5),
+          clockwise: !mainSpiralOptions.clockwise,
+        },
         trailLength: bellCurveRandomInterpolation(
           trailLengthConfig.range,
           trailLengthConfig.power
         ),
       });
-      onBidRefreshInfo = screenSaver.onBidRefreshInfo;
+      let direction = 1;
+      let rotateSpeedMultiplier = randomInRange(0.5, 1.2);
+      intervalId = setInterval(() => {
+        if (rotateSpeedMultiplier > 1.2 || rotateSpeedMultiplier < 0.5) {
+          direction = -direction;
+        }
+        rotateSpeedMultiplier += direction * 0.1;
+        screenSaver.updateRotateSpeedMultiplier(rotateSpeedMultiplier);
+      }, 10000);
     };
     start();
     if (isPristine) {
@@ -142,16 +154,19 @@ export default function ScreenSaverController(canvasId) {
       });
 
       socket.on("BidRefreshInfo", (message) => {
-        onBidRefreshInfo?.(message);
+        try {
+          message = JSON.parse(message);
+          const { auction_type_code, amount } = message;
+          const colorTuple =
+            auctionTypeColors[auction_type_code] ?? getColor(auction_type_code);
+
+          screenSaver.addParticle({ value: amount, colorTuple });
+        } catch (e) {
+          console.log(e);
+        }
       });
     } else {
-      simulateBidding(
-        (bid) => {
-          onBidRefreshInfo?.(bid);
-        },
-        0,
-        simulateBiddingConfig
-      );
+      particleGenerator.start();
     }
   }
 

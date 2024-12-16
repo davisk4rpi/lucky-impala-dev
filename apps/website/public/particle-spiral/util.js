@@ -1,3 +1,7 @@
+export const randomInRange = (min, max) => {
+  return Math.random() * (max - min) + min;
+};
+
 export const linearInterpolation = (
   value,
   inputRange = { min: 0, max: 300 },
@@ -35,8 +39,7 @@ export const bellCurveRandomInterpolation = (
   outputRange = { min: 1, max: 10 },
   power = 2
 ) => {
-  const random =
-    Math.pow(Math.random(), power) * (Math.random() > 0.5 ? 1 : -1);
+  const random = randomNegative(Math.pow(Math.random(), power));
   return linearInterpolation(
     random,
     {
@@ -47,41 +50,26 @@ export const bellCurveRandomInterpolation = (
   );
 };
 
-export const doublesidedHyperbolicInterpolation = (
-  value,
-  inputRange = { min: 0, max: 300 },
-  outputRange = { min: 1, max: 10 },
-  power = 2
-) => {
-  const middleIn = (inputRange.min + inputRange.max) / 2;
-  const middleOut = (outputRange.min + outputRange.max) / 2;
-  if (value < middleIn) {
-    return hyperbolicInterpolation(
-      value,
-      {
-        min: inputRange.min,
-        max: middleIn,
-      },
-      {
-        min: outputRange.min,
-        max: middleOut,
-      },
-      1 / power
-    );
+export function randomBoxMuller({ min, max }, skew = 1, std = 10) {
+  const u = 1 - Math.random(); //Converting [0,1) to (0,1]
+  const v = Math.random();
+  let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+
+  num = num / std + 0.5; // Translate to 0 -> 1
+  if (num > 1 || num < 0) num = randomBoxMuller({ min, max }, skew, std);
+  // resample between 0 and 1 if out of range
+  else {
+    num = Math.pow(num, skew); // Skew
+    num *= max - min; // Stretch to fill range
+    num += min; // offset to min
   }
-  return hyperbolicInterpolation(
-    value,
-    {
-      min: middleIn,
-      max: inputRange.max,
-    },
-    {
-      min: middleOut,
-      max: outputRange.max,
-    },
-    power
-  );
-};
+  return num;
+}
+
+export const randomNegative = (value) => (Math.random() > 0.5 ? value : -value);
+
+export const randomInversion = (value) =>
+  Math.random() > 0.5 ? value : 1 / value;
 
 export function getRandomValueFromArray(array) {
   if (array.length === 0) {
@@ -145,190 +133,14 @@ export const PRISTINE_COLORS = {
   default: [255, 230, 0],
 };
 
-export function getColor(auctionTypeCode) {
-  return COLORS.hasOwnProperty(auctionTypeCode)
-    ? COLORS[auctionTypeCode]
-    : COLORS.default;
+export function getColor(colorKey) {
+  return COLORS.hasOwnProperty(colorKey) ? COLORS[colorKey] : COLORS.default;
 }
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export const TEST_BIDS = [
-  { amount: 1, auction_type_code: "classic" },
-  { amount: 1, auction_type_code: "classic" },
-  { amount: 1, auction_type_code: "classic" },
-  { amount: 1, auction_type_code: "classic" },
-  { amount: 15, auction_type_code: "daily" },
-  { amount: 67, auction_type_code: "sports-moments" },
-  { amount: 23, auction_type_code: "daily" },
-  { amount: 76, auction_type_code: "sports-moments" },
-  { amount: 55, auction_type_code: "classic" },
-  { amount: 3, auction_type_code: "daily" },
-  { amount: 3, auction_type_code: "daily" },
-  { amount: 1, auction_type_code: "daily" },
-  { amount: 1, auction_type_code: "daily" },
-  { amount: 1, auction_type_code: "daily" },
-  { amount: 1, auction_type_code: "daily" },
-  { amount: 1, auction_type_code: "daily" },
-  { amount: 89, auction_type_code: "classic" },
-  { amount: 456, auction_type_code: "sports-moments" },
-  { amount: 41, auction_type_code: "sports-moments" },
-  { amount: 924, auction_type_code: "daily" },
-  { amount: 71, auction_type_code: "daily" },
-  { amount: 28, auction_type_code: "classic" },
-  { amount: 82, auction_type_code: "sports-gear" },
-  { amount: 99, auction_type_code: "pop-culture" },
-  { amount: 44, auction_type_code: "pop-culture" },
-  { amount: 12, auction_type_code: "classic" },
-  { amount: 95, auction_type_code: "ten-minute" },
-  { amount: 34, auction_type_code: "daily" },
-  { amount: 76, auction_type_code: "classic" },
-  { amount: 181, auction_type_code: "daily" },
-  { amount: 51, auction_type_code: "classic" },
-  { amount: 7, auction_type_code: "ten-minute" },
-  { amount: 62, auction_type_code: "sports-moments" },
-  { amount: 412, auction_type_code: "sports-moments" },
-  { amount: 29, auction_type_code: "sports-moments" },
-  { amount: 84, auction_type_code: "daily" },
-  { amount: 1278, auction_type_code: "pop-culture" },
-  { amount: 19, auction_type_code: "pop-culture" },
-  { amount: 73, auction_type_code: "sports-moments" },
-  { amount: 38, auction_type_code: "pop-culture" },
-  { amount: 92, auction_type_code: "classic" },
-  { amount: 567, auction_type_code: "daily" },
-  { amount: 57, auction_type_code: "classic" },
-  { amount: 26, auction_type_code: "daily" },
-  { amount: 78, auction_type_code: "classic" },
-  { amount: 47, auction_type_code: "classic" },
-  { amount: 9, auction_type_code: "daily" },
-  { amount: 63, auction_type_code: "daily" },
-  { amount: 80, auction_type_code: "sports-gear" },
-  { amount: 33, auction_type_code: "sports-gear" },
-  { amount: 81, auction_type_code: "sports-gear" },
-  { amount: 16, auction_type_code: "daily" },
-  { amount: 59, auction_type_code: "classic" },
-  { amount: 98, auction_type_code: "classic" },
-  { amount: 345, auction_type_code: "daily" },
-  { amount: 49, auction_type_code: "daily" },
-  { amount: 77, auction_type_code: "daily" },
-  { amount: 31, auction_type_code: "classic" },
-  { amount: 679, auction_type_code: "daily" },
-  { amount: 53, auction_type_code: "daily" },
-  { amount: 234, auction_type_code: "classic" },
-  { amount: 85, auction_type_code: "classic" },
-  { amount: 22, auction_type_code: "daily" },
-  { amount: 69, auction_type_code: "classic" },
-  { amount: 94, auction_type_code: "jersey" },
-  { amount: 37, auction_type_code: "weekly" },
-  { amount: 45, auction_type_code: "weekly" },
-  { amount: 65, auction_type_code: "classic" },
-  { amount: 14, auction_type_code: "jersey" },
-  { amount: 42, auction_type_code: "daily" },
-  { amount: 91, auction_type_code: "daily" },
-  { amount: 24, auction_type_code: "classic" },
-  { amount: 978, auction_type_code: "daily" },
-  { amount: 345, auction_type_code: "classic" },
-  { amount: 74, auction_type_code: "daily" },
-  { amount: 287, auction_type_code: "weekly-coin" },
-  { amount: 11, auction_type_code: "classic" },
-  { amount: 96, auction_type_code: "classic" },
-  { amount: 58, auction_type_code: "daily" },
-  { amount: 35, auction_type_code: "classic" },
-  { amount: 87, auction_type_code: "daily" },
-  { amount: 123, auction_type_code: "classic" },
-  { amount: 46, auction_type_code: "daily" },
-  { amount: 17, auction_type_code: "classic" },
-  { amount: 93, auction_type_code: "classic" },
-  { amount: 52, auction_type_code: "weekly" },
-  { amount: 27, auction_type_code: "classic" },
-  { amount: 78, auction_type_code: "classic" },
-  { amount: 6, auction_type_code: "daily" },
-  { amount: 61, auction_type_code: "classic" },
-  { amount: 32, auction_type_code: "weekly" },
-  { amount: 189, auction_type_code: "daily" },
-  { amount: 43, auction_type_code: "classic" },
-  { amount: 89, auction_type_code: "weekly-coin" },
-  { amount: 66, auction_type_code: "daily" },
-  { amount: 156, auction_type_code: "weekly" },
-  { amount: 25, auction_type_code: "daily" },
-  { amount: 956, auction_type_code: "classic" },
-  { amount: 36, auction_type_code: "weekly-coin" },
-  { amount: 79, auction_type_code: "classic" },
-  { amount: 8, auction_type_code: "daily" },
-  { amount: 115, auction_type_code: "classic" },
-  { amount: 48, auction_type_code: "weekly-art" },
-  { amount: 21, auction_type_code: "weekly-art" },
-  { amount: 68, auction_type_code: "classic" },
-  { amount: 134, auction_type_code: "weekly-art" },
-  { amount: 83, auction_type_code: "jersey" },
-  { amount: 2, auction_type_code: "jersey" },
-  { amount: 56, auction_type_code: "weekly-art" },
-  { amount: 97, auction_type_code: "daily" },
-  { amount: 99, auction_type_code: "helmet" },
-  { amount: 39, auction_type_code: "helmet" },
-  { amount: 102, auction_type_code: "daily" },
-  { amount: 13, auction_type_code: "daily" },
-  { amount: 86, auction_type_code: "helmet" },
-  { amount: 60, auction_type_code: "daily" },
-  { amount: 4, auction_type_code: "monthly" },
-  { amount: 567, auction_type_code: "monthly" },
-  { amount: 88, auction_type_code: "daily" },
-  { amount: 99, auction_type_code: "weekly-coin" },
-  { amount: 7890, auction_type_code: "monthly" },
-  { amount: 18, auction_type_code: "classic" },
-  { amount: 54, auction_type_code: "daily" },
-  { amount: 356, auction_type_code: "classic" },
-  { amount: 50, auction_type_code: "daily" },
-  { amount: 99, auction_type_code: "classic" },
-  { amount: 5, auction_type_code: "classic" },
-  { amount: 70, auction_type_code: "jersey" },
-  { amount: 45, auction_type_code: "daily" },
-  { amount: 78, auction_type_code: "jersey" },
-  { amount: 40, auction_type_code: "classic" },
-  { amount: 75, auction_type_code: "daily" },
-  { amount: 12, auction_type_code: "weekly" },
-  { amount: 1, auction_type_code: "weekly" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 1, auction_type_code: "ten-minute" },
-  { amount: 23, auction_type_code: "weekly" },
-  { amount: 141, auction_type_code: "weekly" },
-];
-
-const shuffleArrayOrder = (array) => {
+export const shuffleArrayOrder = (array) => {
   return array.sort(() => Math.random() - 0.5);
 };
-
-export async function simulateBidding(
-  onBidRefreshInfo,
-  firstDelay = 2000,
-  config = {
-    delayRange: 7000,
-    isKill: false,
-  }
-) {
-  await sleep(firstDelay);
-  const bids = shuffleArrayOrder([...TEST_BIDS]);
-  // onBidRefreshInfo?.(JSON.stringify({ amount: 1, auction_type_code: "daily" }));
-
-  for (const bid of bids) {
-    await sleep(Math.random() * Math.min(config.delayRange, 2000));
-    bid.auction_type_code = getRandomValueFromArray(Object.keys(COLORS))[0];
-    onBidRefreshInfo?.(JSON.stringify(bid));
-  }
-  if (config.isKill) {
-    return;
-  }
-  return simulateBidding(onBidRefreshInfo, 0, config);
-}
