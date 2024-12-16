@@ -542,7 +542,7 @@ export default function ParticleBlackHole({
     const inflectionPoint = 0.4 * spiral.nearestDeviceEdge;
     const maxDistance = 0.9 * spiral.nearestDeviceEdge;
     const minDistance = 0;
-    const minThetaChange = centerSpiral.seedRotateSpeed / 5;
+    const minThetaChange = centerSpiral.seedRotateSpeed / 10;
 
     if (offsetRadialDistance >= inflectionPoint) {
       offsetThetaChange = hyperbolicInterpolation(
@@ -686,7 +686,11 @@ export default function ParticleBlackHole({
 
     let newMaxKillRadius = adjMaxRadialDistance / 2;
 
-    addCenterOffset();
+    if (killCount < stage2KillCount) {
+      addCenterOffset();
+    } else if (killCount > stage3KillCount) {
+      addCenterOffset();
+    }
     if (!isKill) {
       spiral.setMaxRadialDistance(adjMaxRadialDistance);
       killZone.updateMaxKillRadius(newMaxKillRadius);

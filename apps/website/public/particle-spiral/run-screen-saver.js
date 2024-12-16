@@ -27,8 +27,8 @@ const trailLengthConfig = {
 };
 if (speed === "slow") {
   baseFrameRange = {
-    min: 6000,
-    max: 10000,
+    min: 5000,
+    max: 8000,
   };
   if (!jackpot) {
     jackpot = 30000;
@@ -121,7 +121,7 @@ export default function ScreenSaverController(canvasId) {
         mainSpiralOptions,
         centerSpiralOptions: {
           ...mainSpiralOptions,
-          baseFrameCount: mainSpiralOptions.baseFrameCount * 15,
+          baseFrameCount: mainSpiralOptions.baseFrameCount * 2,
           randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
           c: randomInRange(1, 3),
           clockwise: Math.random() > 0.5,
