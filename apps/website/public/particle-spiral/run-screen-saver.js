@@ -42,7 +42,7 @@ if (speed === "slow") {
     max: 20000,
   };
   if (!jackpot) {
-    jackpot = 30000;
+    jackpot = isPristine ? 30000 : 5000;
   }
   trailLengthConfig.range.min = 10;
   trailLengthConfig.range.max = 40;
@@ -60,11 +60,11 @@ if (speed === "slow") {
   trailLengthConfig.range.max = 20;
   trailLengthConfig.power = 3;
   if (!jackpot) {
-    jackpot = 5000;
+    jackpot = isPristine ? 5000 : 2000;
   }
 }
 if (!jackpot) {
-  jackpot = 20000;
+  jackpot = isPristine ? 20000 : 5000;
 }
 
 const getInitialCenterRandomFactors = (aspectRatio) => {
