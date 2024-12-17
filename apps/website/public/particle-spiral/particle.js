@@ -1,4 +1,4 @@
-import { randomInRange } from "./util.js?v=7";
+import { randomInRange } from "./util.js?v=8";
 
 const drawParticleCircle = (ctx, { coordinates, particleSize, colorStyle }) => {
   ctx.beginPath();

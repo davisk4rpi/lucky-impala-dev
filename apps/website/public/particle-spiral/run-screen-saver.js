@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=9";
+import ParticleBlackHole from "./particle-black-hole.js?v=10";
 import {
   bellCurveRandomInterpolation,
   COLORS,
@@ -9,7 +9,7 @@ import {
   randomNegative,
   randomInRange,
   randomBoxMuller,
-} from "./util.js?v=7";
+} from "./util.js?v=8";
 import { ParticleGenerator } from "./particle-generator.js?v=0";
 
 let isPristine = false;

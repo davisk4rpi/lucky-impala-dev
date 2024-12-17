@@ -2,7 +2,7 @@ import {
   linearInterpolation,
   hyperbolicInterpolation,
   randomInRange,
-} from "./util.js?v=7";
+} from "./util.js?v=8";
 import { Particle } from "./particle.js?v=0";
 import { Spiral, DEFAULT_SPIRAL_OPTIONS } from "./spiral.js?v=0";
 import { KillZone } from "./kill-zone.js?v=0";

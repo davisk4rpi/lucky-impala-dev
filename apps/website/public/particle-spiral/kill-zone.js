@@ -1,4 +1,4 @@
-import { linearInterpolation, randomInRange } from "./util.js?v=7";
+import { linearInterpolation, randomInRange } from "./util.js?v=8";
 
 export function KillZone({
   killColor,

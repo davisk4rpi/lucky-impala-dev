@@ -3,7 +3,7 @@ import {
   shuffleArrayOrder,
   randomBoxMuller,
   sleep,
-} from "./util.js?v=7";
+} from "./util.js?v=8";
 
 const DEFAULT_CONFIG = {
   firstDelay: 2000,
