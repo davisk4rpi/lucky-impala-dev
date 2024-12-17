@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=10";
+import ParticleBlackHole from "./particle-black-hole.js?v=11";
 import {
   bellCurveRandomInterpolation,
   COLORS,
