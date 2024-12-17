@@ -6,13 +6,10 @@ const drawParticleCircle = (ctx, { coordinates, particleSize, colorStyle }) => {
   ctx.arc(coordinates.x, coordinates.y, particleSize / 2, 0, Math.PI * 2);
   ctx.fill();
 };
-const drawParticleStroke = ({
+const drawParticleStroke = (
   ctx,
-  lastCoordinates,
-  coordinates,
-  particleSize,
-  colorStyle,
-}) => {
+  { lastCoordinates, coordinates, particleSize, colorStyle }
+) => {
   ctx.beginPath();
   ctx.strokeStyle = colorStyle;
   ctx.lineWidth = particleSize;
@@ -24,6 +21,8 @@ const drawParticleStroke = ({
 export function Particle({ ctx, value = 0, options = {} }) {
   this.value = value;
   this.particleType = options?.particleType ?? "circle";
+  this.invertedParticleType =
+    options?.invertedParticleType ?? this.particleType;
   this.lastCoordinates = { x: 0, y: 0 };
   this.scaleFactor = options?.scaleFactor ?? 1;
 
@@ -49,13 +48,20 @@ export function Particle({ ctx, value = 0, options = {} }) {
 
   this.theta = () => state.theta;
   this.radialDistance = () => state.radialDistance;
-  this.clone = ({ initialRadialDistance, initialAlpha, scaleFactor }) => {
+  this.clone = ({
+    initialRadialDistance,
+    initialAlpha,
+    scaleFactor,
+    particleType,
+    invertedParticleType,
+  }) => {
     const particle = new Particle({
       ctx,
       value,
       options: {
         colorTuple,
-        particleType: this.particleType,
+        particleType: particleType ?? this.particleType,
+        invertedParticleType: invertedParticleType ?? this.invertedParticleType,
         thetaOffset: state.thetaOffset,
         bFactor: state.bFactor,
         initialRadialDistance,
@@ -66,8 +72,6 @@ export function Particle({ ctx, value = 0, options = {} }) {
     return particle;
   };
 
-  const draw =
-    this.particleType === "circle" ? drawParticleCircle : drawParticleStroke;
   this.rotate = (spiral, rotateSpeedMultipler = 1, paused = false) => {
     stepAlpha();
     if (state.radialDistance === Infinity) {
@@ -90,16 +94,23 @@ export function Particle({ ctx, value = 0, options = {} }) {
       state.theta -= rotateSpeed;
       if (state.theta < 0) {
         state.theta -= rotateSpeed;
+        this.particleType = "stroke";
       }
     }
     state.radialDistance = spiral.getRadialDistance(state.theta, state.bFactor);
 
     const absRadialDistance = Math.abs(state.radialDistance);
-    let particleSize =
-      spiral.calculateParticleSize({
-        theta: state.theta,
-        bFactor: state.bFactor,
-      }) * this.scaleFactor * this.scaleFactor;
+    let particleSize = spiral.calculateParticleSize({
+      theta: state.theta,
+      bFactor: state.bFactor,
+    });
+    const particleType =
+      state.theta >= 0 ? this.particleType : this.invertedParticleType;
+    if (particleType === "stroke") {
+      particleSize *= this.scaleFactor;
+    } else {
+      particleSize *= this.scaleFactor * this.scaleFactor;
+    }
 
     const coordinates = spiral.getCoordinates(
       state.radialDistance,
@@ -115,13 +126,22 @@ export function Particle({ ctx, value = 0, options = {} }) {
     ) {
       return true;
     }
+
     if (paused === false) {
-      draw(ctx, {
-        lastCoordinates: this.lastCoordinates,
-        coordinates,
-        particleSize,
-        colorStyle: colorStyle(),
-      });
+      if (particleType === "circle") {
+        drawParticleCircle(ctx, {
+          coordinates,
+          particleSize,
+          colorStyle: colorStyle(),
+        });
+      } else {
+        drawParticleStroke(ctx, {
+          lastCoordinates: this.lastCoordinates,
+          coordinates,
+          particleSize,
+          colorStyle: colorStyle(),
+        });
+      }
     }
     this.lastCoordinates = coordinates;
     return false;

@@ -123,6 +123,7 @@ export default function ParticleBlackHole({
       value,
       options: {
         particleType: "circle",
+        invertedParticleType: "stroke",
         colorTuple,
         scaleFactor,
       },
@@ -207,6 +208,7 @@ export default function ParticleBlackHole({
           initialRadialDistance: 0,
           initialAlpha: 1,
           scaleFactor: 1,
+          invertedParticleType: "circle",
         })
       );
     } else if (particle.radialDistance() < killZoneRadius) {
