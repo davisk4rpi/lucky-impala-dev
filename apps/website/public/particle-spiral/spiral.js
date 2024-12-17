@@ -51,6 +51,11 @@ export function Spiral(rect, options = {}) {
     this.rotateSpeed = this.baseRotateSpeed();
   };
 
+  this.setBaseFrameCount = (count) => {
+    _options.baseFrameCount = count;
+    this.rotateSpeed = this.baseRotateSpeed();
+  };
+
   this.baseRotateSpeed = () =>
     (rotateSpeedMultiplier * this.maxTheta) / _options.baseFrameCount;
 

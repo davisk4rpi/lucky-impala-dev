@@ -2,6 +2,7 @@ import ParticleBlackHole from "./particle-black-hole.js?v=9";
 import {
   bellCurveRandomInterpolation,
   COLORS,
+  getColor,
   PRISTINE_COLORS,
   getRandomValueFromArray,
   randomInversion,
@@ -144,7 +145,7 @@ export default function ScreenSaverController(canvasId) {
         particleSizeRatio: 1 / 30, // lower ratio means smaller particles
         baseFrameCount: randomBoxMuller(baseFrameRange, 1, 3),
         clockwise: Math.random() > 0.5,
-        c: randomInRange(0.5, 2),
+        c: randomInversion(randomInRange(1, 100)),
         randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
       };
       const centerSpiralOptions = {

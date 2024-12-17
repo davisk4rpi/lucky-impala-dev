@@ -32,7 +32,7 @@ export function Particle({ ctx, value = 0, options = {} }) {
   const finalOpacity = this.particleType === "circle" ? 1 : 0.5;
   let alpha = options.initialAlpha ?? 0;
   const stepAlpha = () => {
-    alpha += 0.05;
+    alpha += 0.01;
     if (alpha > 1) {
       alpha = 1;
     }
@@ -83,7 +83,7 @@ export function Particle({ ctx, value = 0, options = {} }) {
     }
 
     const rotateSpeed =
-      (spiral.rotateSpeed / this.scaleFactor) * rotateSpeedMultipler;
+      (spiral.rotateSpeed / Math.sqrt(this.scaleFactor)) * rotateSpeedMultipler;
     if (Math.abs(state.theta) < rotateSpeed && state.theta !== 0) {
       state.theta = 0;
     } else {
@@ -99,7 +99,7 @@ export function Particle({ ctx, value = 0, options = {} }) {
       spiral.calculateParticleSize({
         theta: state.theta,
         bFactor: state.bFactor,
-      }) * this.scaleFactor * this.scaleFactor * this.scaleFactor;
+      }) * this.scaleFactor * this.scaleFactor;
 
     const coordinates = spiral.getCoordinates(
       state.radialDistance,

@@ -55,14 +55,13 @@ export default function ParticleBlackHole({
   });
 
   console.log({
+    mainSpiralOptions,
+    killStageSpiralOptions,
+    centerSpiralOptions,
     spiral,
     killStageSpiral,
     centerSpiral,
     killZone,
-    killColorTuple,
-    mainSpiralOptions,
-    killStageSpiralOptions,
-    centerSpiralOptions,
   });
 
   let timeout = null;
@@ -115,8 +114,8 @@ export default function ParticleBlackHole({
   function addParticle({ value, colorTuple }) {
     const scaleFactor = hyperbolicInterpolation(
       value,
-      { min: 0, max: 10000 },
-      { min: 1, max: 1.5 },
+      { min: 1, max: 5000 },
+      { min: 1, max: 5 },
       1 / 2
     );
     const particle = new Particle({
@@ -191,6 +190,7 @@ export default function ParticleBlackHole({
   const stage2KillCount = stage1KillCount * 2;
   const stage3KillCount = stage2KillCount + 50;
   const stage1KillCount2 = 300;
+  const stage2KillCount2 = stage1KillCount2 + 300;
 
   const animateStage1Particle = (particle) => {
     let _paused = paused;
@@ -230,10 +230,13 @@ export default function ParticleBlackHole({
   const trailAlpha = linearInterpolation(
     trailLength,
     { min: -20, max: 40 },
-    { min: 0.4, max: 0.02 }
+    { min: 0.4, max: 0.015 }
   );
 
-  const changeMaxRadialDistanceInterval = mainSpiralOptions.baseFrameCount / 2;
+  const changeMaxRadialDistanceInterval = Math.min(
+    2000,
+    mainSpiralOptions.baseFrameCount / 2
+  );
   let maxRadialDistanceIntervalCount = 0;
   let maxRadialDistanceCount = 0;
 
@@ -241,7 +244,7 @@ export default function ParticleBlackHole({
   let nextMaxRadialDistance = 0.5 * maxRadialDistance;
 
   let maxRadialDistanceSteps = [0.4, 0.6, 0.8, 1];
-  if (deviceAspectRatio > 16 / 9) {
+  if (deviceAspectRatio > 16 / 9 || mainSpiralOptions.baseFrameCount < 6000) {
     maxRadialDistanceSteps = [0.3, 0.45, 0.65, 0.8];
   }
   function animate() {
@@ -251,7 +254,7 @@ export default function ParticleBlackHole({
     }
     let adjMaxRadialDistance = maxRadialDistance;
     if (killCount === 0) {
-      if (maxRadialDistanceCount > 1.5 * changeMaxRadialDistanceInterval) {
+      if (maxRadialDistanceCount > 1.2 * changeMaxRadialDistanceInterval) {
         maxRadialDistanceIntervalCount++;
         lastMaxRadialDistance = nextMaxRadialDistance;
         let minNext = maxRadialDistanceSteps[1] * adjMaxRadialDistance;
@@ -314,7 +317,9 @@ export default function ParticleBlackHole({
         });
       }
     }
-    if (killCount2 > stage1KillCount2) {
+    if (killCount === stage3KillCount) {
+      centerSpiral.setBaseFrameCount(centerSpiralOptions.baseFrameCount / 10);
+    } else if (killCount2 > stage2KillCount2) {
       onDone?.();
       return;
     }
@@ -327,8 +332,11 @@ export default function ParticleBlackHole({
         } else if (killCount < stage3KillCount) {
           ctx.fillStyle = `rgba(0, 0, 0, 0.01)`;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (killCount2 > stage1KillCount2) {
+          ctx.fillStyle = `rgba(0, 0, 0, 0.05)`;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
         } else {
-          ctx.fillStyle = `rgba(0, 0, 0, 0.02)`;
+          ctx.fillStyle = `rgba(0, 0, 0, 0.0075)`;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         if (killCount < stage1KillCount) {

@@ -73,7 +73,7 @@ export class ParticleGenerator {
       return;
     }
     await this.randomDelay();
-    const value = randomBoxMuller({ min: 1, max: 5000 }, 8, 2);
+    const value = randomBoxMuller({ min: 1, max: 1000 }, 8, 2);
     const colorIndex = Math.floor(
       randomBoxMuller({ min: 0, max: this.colors.length - 0.0001 }, 1, 5)
     );
