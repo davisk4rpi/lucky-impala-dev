@@ -7,6 +7,7 @@ import {
   randomInversion,
   randomNegative,
   randomInRange,
+  randomBoxMuller,
 } from "./util.js?v=7";
 import { ParticleGenerator } from "./particle-generator.js?v=0";
 
@@ -18,6 +19,10 @@ let speed = urlParams.get("s");
 let baseFrameRange = {
   min: 3000,
   max: 7000,
+};
+let centerSpiralBaseFrameRange = {
+  min: 10000,
+  max: 20000,
 };
 const trailLengthConfig = {
   range: {
@@ -31,6 +36,10 @@ if (speed === "slow") {
     min: 5000,
     max: 8000,
   };
+  centerSpiralBaseFrameRange = {
+    min: 5000,
+    max: 20000,
+  };
   if (!jackpot) {
     jackpot = 30000;
   }
@@ -41,6 +50,10 @@ if (speed === "slow") {
   baseFrameRange = {
     min: isPristine ? 2000 : 1000,
     max: 4000,
+  };
+  centerSpiralBaseFrameRange = {
+    min: 15000,
+    max: 36000,
   };
   trailLengthConfig.range.min = -5;
   trailLengthConfig.range.max = 20;
@@ -91,7 +104,7 @@ export default function ScreenSaverController(canvasId) {
   function varyRotateSpeed(
     spiralName,
     spiral,
-    rotateSpeedMultiplier = randomInRange(0.5, 1.2),
+    rotateSpeedMultiplier = randomInRange(0.5, 1.1),
     direction = randomNegative()
   ) {
     if (speedTimeouts[spiralName]) {
@@ -100,14 +113,14 @@ export default function ScreenSaverController(canvasId) {
     if (killed) return;
 
     if (
-      (rotateSpeedMultiplier > 1 || rotateSpeedMultiplier < 0.8) &&
-      (rotateSpeedMultiplier > 1.2 ||
+      (rotateSpeedMultiplier > 0.9 || rotateSpeedMultiplier < 0.7) &&
+      (rotateSpeedMultiplier > 1.1 ||
         rotateSpeedMultiplier < 0.5 ||
         Math.random() > 0.9)
     ) {
       direction = -direction;
     }
-    rotateSpeedMultiplier += direction * 0.1;
+    rotateSpeedMultiplier += direction * 0.03;
     spiral.setRotateSpeedMultiplier(rotateSpeedMultiplier);
     speedTimeouts[spiralName] = setTimeout(() => {
       varyRotateSpeed(spiralName, spiral, rotateSpeedMultiplier, direction);
@@ -129,12 +142,24 @@ export default function ScreenSaverController(canvasId) {
       };
       const mainSpiralOptions = {
         particleSizeRatio: 1 / 30, // lower ratio means smaller particles
-        baseFrameCount: bellCurveRandomInterpolation(baseFrameRange),
+        baseFrameCount: randomBoxMuller(baseFrameRange, 1, 3),
         clockwise: Math.random() > 0.5,
         c: randomInRange(0.5, 2),
         randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
       };
-
+      const centerSpiralOptions = {
+        ...mainSpiralOptions,
+        baseFrameCount: randomBoxMuller(centerSpiralBaseFrameRange, 1, 3),
+        randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
+        c: randomInRange(1, 3),
+        clockwise: Math.random() > 0.5,
+      };
+      const killStageSpiralOptions = {
+        ...mainSpiralOptions,
+        randomCenter: { xFactor: 1, yFactor: 1 },
+        c: randomInRange(1.25, 2.5),
+        clockwise: !mainSpiralOptions.clockwise,
+      };
       let intervalId;
       screenSaver = ParticleBlackHole({
         canvasId,
@@ -147,20 +172,8 @@ export default function ScreenSaverController(canvasId) {
         killColorTuple,
         jackpot,
         mainSpiralOptions,
-        centerSpiralOptions: {
-          ...mainSpiralOptions,
-          baseFrameCount:
-            mainSpiralOptions.baseFrameCount * randomInRange(1.5, 5),
-          randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
-          c: randomInRange(1, 3),
-          clockwise: Math.random() > 0.5,
-        },
-        killStageSpiralOptions: {
-          ...mainSpiralOptions,
-          randomCenter: { xFactor: 1, yFactor: 1 },
-          c: randomInRange(1.25, 2.5),
-          clockwise: !mainSpiralOptions.clockwise,
-        },
+        centerSpiralOptions,
+        killStageSpiralOptions,
         trailLength: bellCurveRandomInterpolation(
           trailLengthConfig.range,
           trailLengthConfig.power
