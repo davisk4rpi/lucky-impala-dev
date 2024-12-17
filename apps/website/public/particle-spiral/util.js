@@ -66,7 +66,7 @@ export function randomBoxMuller({ min, max }, skew = 1, std = 10) {
   return num;
 }
 
-export const randomNegative = (value) => (Math.random() > 0.5 ? value : -value);
+export const randomNegative = (value = 1) => (Math.random() > 0.5 ? value : -value);
 
 export const randomInversion = (value) =>
   Math.random() > 0.5 ? value : 1 / value;

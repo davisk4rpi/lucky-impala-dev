@@ -5,6 +5,7 @@ import {
   PRISTINE_COLORS,
   getRandomValueFromArray,
   randomInversion,
+  randomNegative,
   randomInRange,
 } from "./util.js?v=7";
 import { ParticleGenerator } from "./particle-generator.js?v=0";
@@ -86,6 +87,33 @@ export default function ScreenSaverController(canvasId) {
     killed = true;
   }
 
+  let speedTimeouts = {};
+  function varyRotateSpeed(
+    spiralName,
+    spiral,
+    rotateSpeedMultiplier = randomInRange(0.5, 1.2),
+    direction = randomNegative()
+  ) {
+    if (speedTimeouts[spiralName]) {
+      clearTimeout(speedTimeouts[spiralName]);
+    }
+    if (killed) return;
+
+    if (
+      (rotateSpeedMultiplier > 1 || rotateSpeedMultiplier < 0.8) &&
+      (rotateSpeedMultiplier > 1.2 ||
+        rotateSpeedMultiplier < 0.5 ||
+        Math.random() > 0.9)
+    ) {
+      direction = -direction;
+    }
+    rotateSpeedMultiplier += direction * 0.1;
+    spiral.setRotateSpeedMultiplier(rotateSpeedMultiplier);
+    speedTimeouts[spiralName] = setTimeout(() => {
+      varyRotateSpeed(spiralName, spiral, rotateSpeedMultiplier, direction);
+    }, randomInRange(3000, 15000));
+  }
+
   async function initialize() {
     const auctionTypeColors = await getAuctionTypeColors;
     const [killColorTuple] = getRandomValueFromArray(
@@ -121,7 +149,8 @@ export default function ScreenSaverController(canvasId) {
         mainSpiralOptions,
         centerSpiralOptions: {
           ...mainSpiralOptions,
-          baseFrameCount: mainSpiralOptions.baseFrameCount * 2,
+          baseFrameCount:
+            mainSpiralOptions.baseFrameCount * randomInRange(1.5, 5),
           randomCenter: getInitialCenterRandomFactors(deviceAspectRatio),
           c: randomInRange(1, 3),
           clockwise: Math.random() > 0.5,
@@ -137,15 +166,8 @@ export default function ScreenSaverController(canvasId) {
           trailLengthConfig.power
         ),
       });
-      let direction = 1;
-      let rotateSpeedMultiplier = randomInRange(0.5, 1.2);
-      intervalId = setInterval(() => {
-        if (rotateSpeedMultiplier > 1.2 || rotateSpeedMultiplier < 0.5) {
-          direction = -direction;
-        }
-        rotateSpeedMultiplier += direction * 0.1;
-        screenSaver.updateRotateSpeedMultiplier(rotateSpeedMultiplier);
-      }, 10000);
+      varyRotateSpeed("main", screenSaver.mainSpiral);
+      varyRotateSpeed("center", screenSaver.centerSpiral);
     };
     start();
     if (isPristine) {
