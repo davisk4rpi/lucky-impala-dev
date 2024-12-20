@@ -144,7 +144,7 @@ export default function ParticleBlackHole({
     const inflectionPoint = 0.4 * spiral.nearestDeviceEdge;
     const maxDistance = 0.9 * spiral.nearestDeviceEdge;
     const minDistance = 0;
-    const minThetaChange = centerSpiral.rotateSpeed / 10;
+    const minThetaChange = centerSpiral.rotateSpeed / 30;
 
     if (offsetRadialDistance >= inflectionPoint) {
       offsetThetaChange = hyperbolicInterpolation(
@@ -163,7 +163,7 @@ export default function ParticleBlackHole({
     }
     if (offsetRadialDistance >= maxDistance) {
       offsetThetaChangeDirection = -1;
-      offsetThetaChange = minThetaChange;
+      offsetThetaChange = minThetaChange / 2;
     }
     if (offsetTheta <= 0) {
       offsetThetaChangeDirection = 1;
