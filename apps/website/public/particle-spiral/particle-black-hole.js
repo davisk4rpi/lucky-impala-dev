@@ -88,19 +88,22 @@ export default function ParticleBlackHole({
     canvas.style.width = rect.width + "px";
     canvas.style.height = rect.height + "px";
 
-    timeout = setTimeout(
-      () => {
-        centerSpiral.setSize(rect);
-        spiral.setSize(rect);
-        killStageSpiral.setSize(rect);
-        maxRadialDistance = spiral.maxRadialDistance;
-        killZone.updateMaxKillRadius(spiral.maxRadialDistance / 2);
-        killZone.setCenter(spiral.center());
-        killStageSpiral.setCenter(spiral.center());
-        paused = false;
-      },
-      useTimeout ? 100 : 0
-    );
+    const setValues = () => {
+      centerSpiral.setSize(rect);
+      spiral.setSize(rect);
+      killStageSpiral.setSize(rect);
+      maxRadialDistance = spiral.maxRadialDistance;
+      killZone.updateMaxKillRadius(spiral.maxRadialDistance / 2);
+      killZone.setCenter(spiral.center());
+      killStageSpiral.setCenter(spiral.center());
+      paused = false;
+    };
+
+    if (useTimeout) {
+      timeout = setTimeout(setValues, 100);
+    } else {
+      setValues();
+    }
   }
   _resizeCanvas(false);
 
@@ -115,7 +118,7 @@ export default function ParticleBlackHole({
     const scaleFactor = hyperbolicInterpolation(
       value,
       { min: 1, max: 5000 },
-      { min: 1, max: 5 },
+      { min: 1, max: 4 },
       1 / 2
     );
     const particle = new Particle({

@@ -27,7 +27,7 @@ let centerSpiralBaseFrameRange = {
 };
 const trailLengthConfig = {
   range: {
-    min: 5,
+    min: 10,
     max: 30,
   },
   power: 2,
@@ -41,9 +41,6 @@ if (speed === "slow") {
     min: 5000,
     max: 20000,
   };
-  if (!jackpot) {
-    jackpot = isPristine ? 30000 : 5000;
-  }
   trailLengthConfig.range.min = 10;
   trailLengthConfig.range.max = 40;
   trailLengthConfig.power = 2;
@@ -59,12 +56,9 @@ if (speed === "slow") {
   trailLengthConfig.range.min = -5;
   trailLengthConfig.range.max = 20;
   trailLengthConfig.power = 3;
-  if (!jackpot) {
-    jackpot = isPristine ? 5000 : 2000;
-  }
 }
 if (!jackpot) {
-  jackpot = isPristine ? 20000 : 5000;
+  jackpot = 2000;
 }
 
 const getInitialCenterRandomFactors = (aspectRatio) => {
@@ -130,11 +124,11 @@ export default function ScreenSaverController(canvasId) {
 
   async function initialize() {
     const auctionTypeColors = await getAuctionTypeColors;
-    const [killColorTuple] = getRandomValueFromArray(
-      Object.values(auctionTypeColors)
-    );
 
     const start = () => {
+      const [killColorTuple] = getRandomValueFromArray(
+        Object.values(auctionTypeColors)
+      );
       const skew = randomInversion(randomInRange(1, 3));
       particleGenerator.delayRange = {
         min: 500,
