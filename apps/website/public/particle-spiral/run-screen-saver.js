@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=1.1";
+import ParticleBlackHole from "./particle-black-hole.js?v=1.2";
 import {
   bellCurveRandomInterpolation,
   COLORS,
@@ -27,7 +27,7 @@ let centerSpiralBaseFrameRange = {
 };
 const trailLengthConfig = {
   range: {
-    min: 10,
+    min: 15,
     max: 30,
   },
   power: 2,
@@ -41,7 +41,7 @@ if (speed === "slow") {
     min: 5000,
     max: 20000,
   };
-  trailLengthConfig.range.min = 10;
+  trailLengthConfig.range.min = 20;
   trailLengthConfig.range.max = 40;
   trailLengthConfig.power = 2;
 } else if (speed === "fast") {
@@ -54,8 +54,20 @@ if (speed === "slow") {
     max: 36000,
   };
   trailLengthConfig.range.min = -5;
-  trailLengthConfig.range.max = 20;
+  trailLengthConfig.range.max = 30;
   trailLengthConfig.power = 3;
+} else if (speed === "hyper") {
+  baseFrameRange = {
+    min: 300,
+    max: 1000,
+  };
+  centerSpiralBaseFrameRange = {
+    min: 800,
+    max: 2000,
+  };
+  trailLengthConfig.range.min = 40;
+  trailLengthConfig.range.max = 40;
+  trailLengthConfig.power = 1;
 }
 if (!jackpot) {
   jackpot = 2000;

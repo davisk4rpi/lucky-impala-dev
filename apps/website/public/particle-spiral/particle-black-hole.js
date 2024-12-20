@@ -234,8 +234,8 @@ export default function ParticleBlackHole({
 
   const trailAlpha = linearInterpolation(
     trailLength,
-    { min: -20, max: 40 },
-    { min: 0.3, max: 0.015 }
+    { min: -40, max: 40 },
+    { min: 0.5, max: 0.015 }
   );
 
   const changeMaxRadialDistanceInterval = Math.min(
