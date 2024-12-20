@@ -15,7 +15,7 @@ export function KillZone({
   let currentRadius = 0;
   let _center = center;
   let _centerOffset = { x: 0, y: 0 };
-  const killRadiusFactor = randomInRange(0.75, 0.95);
+  const killRadiusFactor = randomInRange(0.90, 0.98);
   let _killRadius = Math.max(maxKillRadius * killRadiusFactor, 1);
 
   this.setCenter = (center) => {
