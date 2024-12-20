@@ -83,6 +83,7 @@ export function KillZone({
 
   this.currentRadius = () => currentRadius;
   this.draw = (ctx) => {
+    if (_killRadius < 1) return;
     if (currentRadius < 0) return;
     if (growRadius > currentRadius && !isKill) {
       const radiusDelta = growRadius - currentRadius;
@@ -91,22 +92,23 @@ export function KillZone({
       currentRadius = growRadius;
     }
 
-    const lineWidth = Math.max(2, calculateParticleSize(currentRadius));
-    if (currentRadius <= lineWidth) return;
+    const radius = Math.max(currentRadius, 1.5);
+
+    const lineWidth = Math.max(1, calculateParticleSize(radius));
     const center = this.center();
     const alpha = linearInterpolation(
-      currentRadius,
+      radius,
       { min: 0, max: this.killRadius() },
-      { min: 0.2, max: 0.7 }
+      { min: 0.3, max: 0.7 }
     );
 
     ctx.beginPath();
     ctx.fillStyle = `rgba(0,0,0, 1)`;
-    ctx.arc(center.x, center.y, currentRadius + lineWidth / 2, 0, Math.PI * 2);
+    ctx.arc(center.x, center.y, radius + lineWidth / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.closePath();
     ctx.beginPath();
-    ctx.arc(center.x, center.y, currentRadius, 0, Math.PI * 2);
+    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
     ctx.strokeStyle = `rgba(${killColor.join(",")}, ${alpha})`;
     ctx.lineWidth = lineWidth;
     ctx.stroke();

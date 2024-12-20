@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=1.0";
+import ParticleBlackHole from "./particle-black-hole.js?v=1.1";
 import {
   bellCurveRandomInterpolation,
   COLORS,
@@ -19,10 +19,10 @@ let jackpot = parseInt(urlParams.get("j") ?? "0");
 let speed = urlParams.get("s");
 let baseFrameRange = {
   min: 3000,
-  max: 7000,
+  max: 9000,
 };
 let centerSpiralBaseFrameRange = {
-  min: 10000,
+  min: 7000,
   max: 20000,
 };
 const trailLengthConfig = {
@@ -35,7 +35,7 @@ const trailLengthConfig = {
 if (speed === "slow") {
   baseFrameRange = {
     min: 5000,
-    max: 8000,
+    max: 10000,
   };
   centerSpiralBaseFrameRange = {
     min: 5000,
@@ -46,7 +46,7 @@ if (speed === "slow") {
   trailLengthConfig.power = 2;
 } else if (speed === "fast") {
   baseFrameRange = {
-    min: isPristine ? 2000 : 1000,
+    min: 1000,
     max: 4000,
   };
   centerSpiralBaseFrameRange = {

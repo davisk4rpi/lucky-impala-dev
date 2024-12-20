@@ -31,7 +31,7 @@ export function Particle({ ctx, value = 0, options = {} }) {
   const finalOpacity = this.particleType === "circle" ? 1 : 0.5;
   let alpha = options.initialAlpha ?? 0;
   const stepAlpha = () => {
-    alpha += 0.01;
+    alpha += 0.005;
     if (alpha > 1) {
       alpha = 1;
     }
@@ -103,7 +103,7 @@ export function Particle({ ctx, value = 0, options = {} }) {
     let particleSize = spiral.calculateParticleSize({
       theta: state.theta,
       bFactor: state.bFactor,
-    });
+    }) * alpha;
     const particleType =
       state.theta >= 0 ? this.particleType : this.invertedParticleType;
     if (particleType === "stroke") {

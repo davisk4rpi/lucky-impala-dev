@@ -3,9 +3,9 @@ import {
   hyperbolicInterpolation,
   randomInRange,
 } from "./util.js?v=1.0";
-import { Particle } from "./particle.js?v=1.0";
+import { Particle } from "./particle.js?v=1.1";
 import { Spiral, DEFAULT_SPIRAL_OPTIONS } from "./spiral.js?v=1.0";
-import { KillZone } from "./kill-zone.js?v=1.0";
+import { KillZone } from "./kill-zone.js?v=1.1";
 
 const deviceAspectRatio =
   Math.max(window.innerWidth, window.innerHeight) /
@@ -131,7 +131,7 @@ export default function ParticleBlackHole({
         scaleFactor,
       },
     });
-    particles.push(particle); // Add new particle to the array
+    particles.unshift(particle); // Add new particle to the array
   }
 
   let offsetTheta = (Math.random() * Math.PI) / 2;
@@ -235,7 +235,7 @@ export default function ParticleBlackHole({
   const trailAlpha = linearInterpolation(
     trailLength,
     { min: -20, max: 40 },
-    { min: 0.4, max: 0.015 }
+    { min: 0.3, max: 0.015 }
   );
 
   const changeMaxRadialDistanceInterval = Math.min(
