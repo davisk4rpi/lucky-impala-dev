@@ -1,4 +1,4 @@
-import { linearInterpolation } from "./util.js?v=8";
+import { linearInterpolation } from "./util.js?v=1.0";
 
 // general arch spirals
 // r = a + b * Math.pow(theta, 1/c)

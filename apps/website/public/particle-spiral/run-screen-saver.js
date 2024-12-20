@@ -1,4 +1,4 @@
-import ParticleBlackHole from "./particle-black-hole.js?v=11";
+import ParticleBlackHole from "./particle-black-hole.js?v=1.0";
 import {
   bellCurveRandomInterpolation,
   COLORS,
@@ -9,8 +9,8 @@ import {
   randomNegative,
   randomInRange,
   randomBoxMuller,
-} from "./util.js?v=8";
-import { ParticleGenerator } from "./particle-generator.js?v=0";
+} from "./util.js?v=1.0";
+import { ParticleGenerator } from "./particle-generator.js?v=1.0";
 
 let isPristine = false;
 const urlParams = new URLSearchParams(window.location.search);
